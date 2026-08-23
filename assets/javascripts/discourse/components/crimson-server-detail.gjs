@@ -343,16 +343,12 @@ export default class CrimsonServerDetail extends Component {
       <article class="csl-detail csl-game--{{this.server.game_slug}}">
         <section class="csl-detail-hero">
           <div class="csl-detail-hero__visual">
-            {{#if this.server.banner_url}}
-              <img src={{this.server.banner_url}} alt={{this.server.name}} />
-            {{else}}
-              <span aria-hidden="true">{{this.server.game.icon}}</span>
-            {{/if}}
+            <span aria-hidden="true">{{this.server.game.icon}}</span>
           </div>
 
           <div class="csl-detail-hero__shade"></div>
           <div class="csl-detail-hero__content">
-            <p class="csl-eyebrow">{{this.server.game.icon}} {{this.server.game.name}}</p>
+            <a class="csl-eyebrow csl-category-link" href={{this.server.game.category_url}}>{{this.server.game.icon}} {{this.server.game.name}}</a>
             <h1>{{this.server.name}}</h1>
             <p>{{this.server.short_description}}</p>
 
@@ -363,15 +359,37 @@ export default class CrimsonServerDetail extends Component {
               {{#if this.server.version}}<span>{{this.server.version}}</span>{{/if}}
               {{#if this.server.mode}}<span>{{this.server.mode}}</span>{{/if}}
             </div>
+
+            {{#if this.server.tag_rows.length}}
+              <div class="csl-server-tags csl-server-tags--hero" aria-label="Sunucu etiketleri">
+                {{#each this.server.tag_rows as |tag|}}<a href={{tag.url}}>#{{tag.name}}</a>{{/each}}
+              </div>
+            {{/if}}
+
+            {{#if this.server.banner_url}}
+              {{#if this.server.website_url}}
+                <a
+                  class="csl-ad-banner csl-ad-banner--detail"
+                  href={{this.server.website_url}}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow ugc sponsored"
+                  aria-label="{{this.server.name}} web sitesini aç"
+                ><img src={{this.server.banner_url}} alt="{{this.server.name}} reklam bannerı" /></a>
+              {{else}}
+                <div class="csl-ad-banner csl-ad-banner--detail"><img src={{this.server.banner_url}} alt="{{this.server.name}} reklam bannerı" /></div>
+              {{/if}}
+            {{/if}}
           </div>
         </section>
 
         <section class="csl-detail-summary">
           <div class="csl-detail-summary__main">
-            <div class="csl-address csl-address--detail">
-              <code>{{this.server.address}}</code>
-              <button type="button" {{on "click" this.copyAddress}}>Kopyala</button>
-            </div>
+            {{#if this.server.can_view_endpoint}}
+              <div class="csl-address csl-address--detail">
+                <code>{{this.server.address}}</code>
+                <button type="button" {{on "click" this.copyAddress}}>Kopyala</button>
+              </div>
+            {{/if}}
 
             <div class="csl-owner csl-owner--detail">
               {{#if this.server.owner}}
@@ -399,7 +417,7 @@ export default class CrimsonServerDetail extends Component {
                 <span>canlı oyuncu</span>
               {{else}}
                 <strong>{{if (eq this.server.status "online") "Açık" "—"}}</strong>
-                <span>port erişimi</span>
+                <span>erişim durumu</span>
               {{/if}}
             </div>
             <div><strong>{{this.server.vote_count}}</strong><span>toplam oy</span></div>
@@ -429,6 +447,8 @@ export default class CrimsonServerDetail extends Component {
               <span class="csl-button csl-button--disabled">Sahiplik talebi inceleniyor</span>
             {{else if this.viewer.can_claim}}
               <button class="csl-button" type="button" disabled={{eq this.busyAction "claim"}} {{on "click" this.requestOwnership}}>Bu sunucuyu sahiplen</button>
+            {{else}}
+              {{#unless this.viewer.logged_in}}<a class="csl-button" href={{this.loginPath}}>Bu sunucuyu sahiplen</a>{{/unless}}
             {{/if}}
             {{#if this.viewer.can_delete}}
               <button class="csl-button csl-button--danger" type="button" disabled={{eq this.busyAction "delete"}} {{on "click" this.deleteServer}}>İlanı sil</button>
@@ -467,6 +487,11 @@ export default class CrimsonServerDetail extends Component {
               <label><span>Ülke kodu</span><input name="country_code" value={{this.server.country_code}} maxlength="2" /></label>
               <label><span>Sürüm</span><input name="version" value={{this.server.version}} maxlength="60" /></label>
               <label><span>Oyun modu</span><input name="mode" value={{this.server.mode}} maxlength="60" /></label>
+              <label class="csl-form__wide">
+                <span>Etiketler</span>
+                <input name="tags" value={{this.server.tags_csv}} maxlength="300" placeholder="pvp, türkçe, yüksek-exp" />
+                <small>En fazla 8 etiket; virgülle ayır.</small>
+              </label>
               {{#if this.editGameFields.length}}
                 <div class="csl-form-section csl-form__wide">
                   <strong>Oyuna özel bilgiler</strong>
@@ -490,7 +515,7 @@ export default class CrimsonServerDetail extends Component {
               {{/if}}
               <label class="csl-form__wide"><span>Web sitesi</span><input name="website_url" value={{this.server.website_url}} type="url" /></label>
               <label class="csl-form__wide"><span>Discord daveti</span><input name="discord_url" value={{this.server.discord_url}} type="url" /></label>
-              <label class="csl-form__wide"><span>Hareketli reklam bannerı (GIF/WebP destekli)</span><input name="banner_url" value={{this.server.banner_url}} type="text" inputmode="url" autocomplete="off" /></label>
+              <label class="csl-form__wide"><span>Hareketli reklam bannerı (önerilen 468×60 GIF/WebP)</span><input name="banner_url" value={{this.server.banner_url}} type="text" inputmode="url" autocomplete="off" /></label>
               <label class="csl-form__wide"><span>Detaylı açıklama</span><textarea name="description" value={{this.server.description}} maxlength="4000" rows="7"></textarea></label>
               <label class="csl-check csl-form__wide"><input name="monitoring_enabled" type="checkbox" checked={{this.server.monitoring_enabled}} /><span>Güvenli canlı durum sorgusunu etkin tut</span></label>
               <div class="csl-form__actions csl-form__wide">
@@ -522,11 +547,13 @@ export default class CrimsonServerDetail extends Component {
             {{/if}}
 
             <dl class="csl-technical">
-              <div><dt>Sorgu adaptörü</dt><dd>{{this.server.query_adapter}}</dd></div>
-              <div><dt>Sorgu portu</dt><dd>{{if this.server.query_port this.server.query_port this.server.port}}</dd></div>
-              <div><dt>Son kontrol</dt><dd>{{if this.server.last_checked_at this.server.last_checked_at "Henüz çalışmadı"}}</dd></div>
-              <div><dt>Yanıt süresi</dt><dd>{{#if this.server.last_response_ms}}{{this.server.last_response_ms}} ms{{else}}—{{/if}}</dd></div>
-              {{#if this.server.last_query_error}}<div class="csl-technical__wide"><dt>Son sorgu notu</dt><dd>{{this.server.last_query_error}}</dd></div>{{/if}}
+              <div class="csl-technical__wide"><dt>Son kontrol</dt><dd>{{if this.server.last_checked_at this.server.last_checked_at "Henüz çalışmadı"}}</dd></div>
+              {{#if this.server.can_view_endpoint}}
+                <div><dt>Sorgu adaptörü</dt><dd>{{this.server.query_adapter}}</dd></div>
+                <div><dt>Sorgu portu</dt><dd>{{if this.server.query_port this.server.query_port this.server.port}}</dd></div>
+                <div><dt>Yanıt süresi</dt><dd>{{#if this.server.last_response_ms}}{{this.server.last_response_ms}} ms{{else}}—{{/if}}</dd></div>
+                {{#if this.server.last_query_error}}<div class="csl-technical__wide"><dt>Son sorgu notu</dt><dd>{{this.server.last_query_error}}</dd></div>{{/if}}
+              {{/if}}
             </dl>
           </section>
 

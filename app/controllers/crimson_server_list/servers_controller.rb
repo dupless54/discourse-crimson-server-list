@@ -15,14 +15,32 @@ module ::CrimsonServerList
     def index
       public_scope = CrimsonServerList::Server.publicly_visible
       game_counts = public_scope.group(:game_slug).count
+      tag_counts = Hash.new(0)
+      public_scope.pluck(:tags).each do |server_tags|
+        Array(server_tags).each { |tag| tag_counts[tag] += 1 }
+      end
       servers = filtered_scope(public_scope)
       voted_ids = voted_server_ids(servers)
 
       payload = {
         games:
           CrimsonServerList::GAMES.map do |game|
-            game.merge(server_count: game_counts.fetch(game[:slug], 0))
+            game.merge(
+              server_count: game_counts.fetch(game[:slug], 0),
+              category_url: "/servers?game=#{game[:slug]}",
+            )
           end,
+        tags:
+          tag_counts
+            .sort_by { |tag, count| [-count, tag] }
+            .map do |tag, count|
+              {
+                slug: tag,
+                name: tag.tr("-", " "),
+                server_count: count,
+                url: "/servers?tag=#{tag}",
+              }
+            end,
         servers:
           servers.map do |server|
             serialize_server(server, voted_today: voted_ids.include?(server.id))
@@ -397,6 +415,9 @@ module ::CrimsonServerList
       game_slug = params[:game].to_s
       scope = scope.where(game_slug: game_slug) if CrimsonServerList::GAME_SLUGS.include?(game_slug)
 
+      tag = CrimsonServerList.normalize_tag(params[:tag])
+      scope = scope.where("crimson_game_servers.tags @> ?", [tag].to_json) if tag.present?
+
       query = params[:q].to_s.strip.first(80)
       if query.present?
         pattern = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
@@ -404,7 +425,7 @@ module ::CrimsonServerList
           scope.where(
             "crimson_game_servers.name ILIKE :pattern OR " \
               "crimson_game_servers.short_description ILIKE :pattern OR " \
-              "crimson_game_servers.host ILIKE :pattern",
+              "crimson_game_servers.tags::text ILIKE :pattern",
             pattern: pattern,
           )
       end
@@ -448,8 +469,12 @@ module ::CrimsonServerList
     end
 
     def serialize_server(server, voted_today: false, include_private: false)
-      game = CrimsonServerList.game(server.game_slug)
+      game =
+        CrimsonServerList.game(server.game_slug).merge(
+          category_url: "/servers?game=#{server.game_slug}",
+        )
       owner = server.owner
+      can_view_endpoint = include_private || can_manage_server?(server)
       cache = CrimsonServerList::ProbeService.read_cache(server.id)
       cache = cache.with_indifferent_access if cache.respond_to?(:with_indifferent_access)
       supports_player_count = cache&.fetch(:supports_player_count, nil)
@@ -465,10 +490,6 @@ module ::CrimsonServerList
         name: server.name,
         short_description: server.short_description,
         description: server.description,
-        host: server.host,
-        port: server.port,
-        query_port: server.query_port,
-        address: display_address(server),
         website_url: server.website_url,
         discord_url: server.discord_url,
         banner_url: server.banner_url,
@@ -476,6 +497,9 @@ module ::CrimsonServerList
         language: server.language,
         version: server.version,
         mode: server.mode,
+        tags: Array(server.tags),
+        tags_csv: Array(server.tags).join(", "),
+        tag_rows: serialize_tags(server),
         game_details: server.game_details || {},
         game_detail_rows: serialize_game_details(server),
         status: live_status,
@@ -483,9 +507,7 @@ module ::CrimsonServerList
         players_online: cache&.fetch(:players_online, nil) || server.players_online,
         players_max: cache&.fetch(:players_max, nil) || server.players_max,
         supports_player_count: supports_player_count,
-        query_adapter: cache&.fetch(:adapter, nil) || adapter_name(server.game_slug),
         last_checked_at: cache&.fetch(:last_checked_at, nil) || server.last_checked_at&.iso8601,
-        last_response_ms: cache&.fetch(:last_response_ms, nil) || server.last_response_ms,
         monitoring_enabled: server.monitoring_enabled,
         vote_count: server.vote_count,
         featured: server.featured,
@@ -495,6 +517,7 @@ module ::CrimsonServerList
         view_count: server.view_count,
         can_edit: can_manage_server?(server),
         can_delete: current_user&.staff? || false,
+        can_view_endpoint: can_view_endpoint,
         approved: server.approved,
         enabled: server.enabled,
         created_at: server.created_at&.iso8601,
@@ -510,8 +533,16 @@ module ::CrimsonServerList
           end,
       }
 
-      if include_private || can_manage_server?(server)
-        payload[:last_query_error] = server.last_query_error
+      if can_view_endpoint
+        payload.merge!(
+          host: server.host,
+          port: server.port,
+          query_port: server.query_port,
+          address: display_address(server),
+          query_adapter: cache&.fetch(:adapter, nil) || adapter_name(server.game_slug),
+          last_response_ms: cache&.fetch(:last_response_ms, nil) || server.last_response_ms,
+          last_query_error: server.last_query_error,
+        )
       end
 
       payload
@@ -531,6 +562,16 @@ module ::CrimsonServerList
           label: field[:label],
           value: value,
           unit: field[:unit],
+        }
+      end
+    end
+
+    def serialize_tags(server)
+      Array(server.tags).map do |tag|
+        {
+          slug: tag,
+          name: tag.tr("-", " "),
+          url: "/servers?tag=#{tag}",
         }
       end
     end
@@ -622,6 +663,7 @@ module ::CrimsonServerList
         :version,
         :mode,
         :monitoring_enabled,
+        :tags,
         game_details: CrimsonServerList::GAME_DETAIL_KEYS,
       )
     end

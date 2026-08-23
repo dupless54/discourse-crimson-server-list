@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Adds an independent, moderated private game server top list to Discourse.
-# version: 2.1.0
+# version: 2.2.0
 # authors: dupless54
 # url: https://forum.senin.me/servers
 # required_version: 3.3.0
@@ -15,6 +15,8 @@ register_asset "stylesheets/crimson-server-list.scss"
 
 module ::CrimsonServerList
   PLUGIN_NAME = "discourse-crimson-server-list"
+  TAG_LIMIT = 8
+  TAG_MAX_LENGTH = 30
 
   GAME_FIELDS = {
     "minecraft" => [
@@ -89,6 +91,10 @@ module ::CrimsonServerList
 
   def self.game_fields(slug)
     GAME_FIELDS.fetch(slug.to_s, [])
+  end
+
+  def self.normalize_tag(value)
+    Slug.for(value.to_s.strip).to_s.first(TAG_MAX_LENGTH).presence
   end
 end
 

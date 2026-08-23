@@ -23,6 +23,7 @@ module ::CrimsonServerList
              inverse_of: :server
 
     before_validation :ensure_slug
+    before_validation :normalize_tags
 
     validates :game_slug, inclusion: { in: CrimsonServerList::GAME_SLUGS }
     validates :owner_id, presence: true
@@ -68,6 +69,7 @@ module ::CrimsonServerList
     validate :host_is_allowed
     validate :query_endpoint_is_allowed
     validate :game_details_are_valid
+    validate :tags_are_valid
 
     scope :publicly_visible, -> { where(approved: true, enabled: true) }
 
@@ -171,6 +173,30 @@ module ::CrimsonServerList
           end
         elsif text.length > 100
           errors.add(:game_details, :too_long, count: 100)
+        end
+      end
+    end
+
+    def normalize_tags
+      source = tags.is_a?(Array) ? tags : tags.to_s.split(/[\n,]/)
+      self.tags =
+        source
+          .filter_map { |value| CrimsonServerList.normalize_tag(value) }
+          .uniq
+          .first(CrimsonServerList::TAG_LIMIT)
+    end
+
+    def tags_are_valid
+      unless tags.is_a?(Array) && tags.length <= CrimsonServerList::TAG_LIMIT
+        errors.add(:tags, :invalid)
+        return
+      end
+
+      tags.each do |tag|
+        unless tag.is_a?(String) && tag.length.between?(1, CrimsonServerList::TAG_MAX_LENGTH) &&
+                 tag.match?(/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/)
+          errors.add(:tags, :invalid)
+          break
         end
       end
     end

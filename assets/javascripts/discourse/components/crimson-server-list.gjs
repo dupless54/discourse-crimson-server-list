@@ -12,8 +12,10 @@ export default class CrimsonServerList extends Component {
   @tracked pendingServers = this.args.model?.pending_servers || [];
   @tracked pendingClaims = this.args.model?.pending_claims || [];
   @tracked games = this.args.model?.games || [];
+  @tracked tags = this.args.model?.tags || [];
   @tracked stats = this.args.model?.stats || {};
   @tracked selectedGame = "all";
+  @tracked selectedTag = "";
   @tracked searchQuery = "";
   @tracked sortMode = "top";
   @tracked showSubmit = false;
@@ -27,6 +29,26 @@ export default class CrimsonServerList extends Component {
     this.args.model?.games?.[0]?.slug || "minecraft";
   @tracked busyClaimId = null;
 
+  constructor(owner, args) {
+    super(owner, args);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const filters = new URLSearchParams(window.location.search);
+    const game = filters.get("game");
+    const tag = filters.get("tag");
+
+    if (this.games.some((candidate) => candidate.slug === game)) {
+      this.selectedGame = game;
+    }
+
+    if (this.tags.some((candidate) => candidate.slug === tag)) {
+      this.selectedTag = tag;
+    }
+  }
+
   get viewer() {
     return this.args.model?.viewer || {};
   }
@@ -36,19 +58,21 @@ export default class CrimsonServerList extends Component {
     let servers = this.servers.filter((server) => {
       const gameMatches =
         this.selectedGame === "all" || server.game_slug === this.selectedGame;
+      const tagMatches =
+        !this.selectedTag || (server.tags || []).includes(this.selectedTag);
       const haystack = [
         server.name,
         server.short_description,
-        server.host,
         server.game?.name,
         server.mode,
         server.version,
+        ...(server.tags || []),
       ]
         .filter(Boolean)
         .join(" ")
         .toLocaleLowerCase("tr-TR");
 
-      return gameMatches && (!needle || haystack.includes(needle));
+      return gameMatches && tagMatches && (!needle || haystack.includes(needle));
     });
 
     servers = [...servers].sort((left, right) => {
@@ -102,9 +126,48 @@ export default class CrimsonServerList extends Component {
     return this.pendingServers.length + this.pendingClaims.length;
   }
 
+  get gameFilters() {
+    return this.games.map((game) => ({
+      ...game,
+      filter_url: this.filterUrl(game.slug, this.selectedTag),
+    }));
+  }
+
+  get tagFilters() {
+    return this.tags.map((tag) => ({
+      ...tag,
+      filter_url: this.filterUrl(this.selectedGame, tag.slug),
+    }));
+  }
+
+  get allGamesUrl() {
+    return this.filterUrl("all", this.selectedTag);
+  }
+
+  get allTagsUrl() {
+    return this.filterUrl(this.selectedGame, "");
+  }
+
   @action
-  selectGame(slug) {
+  selectGame(slug, event) {
+    if (event?.metaKey || event?.ctrlKey || event?.shiftKey || event?.altKey) {
+      return;
+    }
+
+    event?.preventDefault();
     this.selectedGame = slug;
+    this.syncFilterUrl();
+  }
+
+  @action
+  selectTag(slug, event) {
+    if (event?.metaKey || event?.ctrlKey || event?.shiftKey || event?.altKey) {
+      return;
+    }
+
+    event?.preventDefault();
+    this.selectedTag = slug;
+    this.syncFilterUrl();
   }
 
   @action
@@ -313,12 +376,62 @@ export default class CrimsonServerList extends Component {
         ? { ...game, server_count: Number(game.server_count || 0) + 1 }
         : game,
     );
+
+    let nextTags = [...this.tags];
+    for (const tag of server.tags || []) {
+      const existing = nextTags.find((candidate) => candidate.slug === tag);
+      if (existing) {
+        nextTags = nextTags.map((candidate) =>
+          candidate.slug === tag
+            ? {
+                ...candidate,
+                server_count: Number(candidate.server_count || 0) + 1,
+              }
+            : candidate,
+        );
+      } else {
+        nextTags.push({
+          slug: tag,
+          name: tag.replaceAll("-", " "),
+          server_count: 1,
+          url: `/servers?tag=${encodeURIComponent(tag)}`,
+        });
+      }
+    }
+    this.tags = nextTags.sort(
+      (left, right) =>
+        right.server_count - left.server_count ||
+        left.name.localeCompare(right.name, "tr"),
+    );
+
     this.stats = {
       ...this.stats,
       server_count: Number(this.stats.server_count || 0) + 1,
       game_count:
         Number(this.stats.game_count || 0) + (gameWasEmpty ? 1 : 0),
     };
+  }
+
+  filterUrl(gameSlug, tagSlug) {
+    const filters = new URLSearchParams();
+    if (gameSlug && gameSlug !== "all") {
+      filters.set("game", gameSlug);
+    }
+    if (tagSlug) {
+      filters.set("tag", tagSlug);
+    }
+
+    const query = filters.toString();
+    return query ? `/servers?${query}` : "/servers";
+  }
+
+  syncFilterUrl() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const url = this.filterUrl(this.selectedGame, this.selectedTag);
+    window.history.replaceState(window.history.state, "", url);
   }
 
   serverFormData(form) {
@@ -454,6 +567,11 @@ export default class CrimsonServerList extends Component {
               <span>Oyun modu</span>
               <input name="mode" maxlength="60" placeholder="Survival, Roleplay, PvP…" />
             </label>
+            <label class="csl-form__wide">
+              <span>Etiketler</span>
+              <input name="tags" maxlength="300" placeholder="pvp, türkçe, yüksek-exp" />
+              <small>En fazla 8 etiket; virgülle ayır.</small>
+            </label>
             {{#if this.submissionGameFields.length}}
               <div class="csl-form-section csl-form__wide">
                 <strong>Oyuna özel bilgiler</strong>
@@ -483,7 +601,7 @@ export default class CrimsonServerList extends Component {
               <input name="discord_url" type="url" placeholder="https://discord.gg/…" />
             </label>
             <label class="csl-form__wide">
-              <span>Hareketli reklam bannerı</span>
+              <span>Hareketli reklam bannerı (önerilen 468×60 GIF/WebP)</span>
               <input name="banner_url" type="text" inputmode="url" autocomplete="off" placeholder="https://…/banner.gif veya banner.webp" />
             </label>
             <label class="csl-form__wide">
@@ -567,24 +685,36 @@ export default class CrimsonServerList extends Component {
 
       <section class="csl-discovery" aria-label="Sunucu filtreleri">
         <div class="csl-game-filter" role="list" aria-label="Oyunlar">
-          <button class={{if (eq this.selectedGame "all") "is-active" ""}} type="button" {{on "click" (fn this.selectGame "all")}}>
+          <a href={{this.allGamesUrl}} class={{if (eq this.selectedGame "all") "is-active" ""}} {{on "click" (fn this.selectGame "all")}}>
             <span class="csl-game-filter__all">∞</span>
             <strong>Tümü</strong>
             <small>{{this.stats.server_count}}</small>
-          </button>
-          {{#each this.games as |game|}}
-            <button class="csl-game--{{game.slug}} {{if (eq this.selectedGame game.slug) "is-active" ""}}" type="button" {{on "click" (fn this.selectGame game.slug)}}>
+          </a>
+          {{#each this.gameFilters as |game|}}
+            <a href={{game.filter_url}} class="csl-game--{{game.slug}} {{if (eq this.selectedGame game.slug) "is-active" ""}}" {{on "click" (fn this.selectGame game.slug)}}>
               <span>{{game.icon}}</span>
               <strong>{{game.name}}</strong>
               <small>{{game.server_count}}</small>
-            </button>
+            </a>
           {{/each}}
         </div>
+
+        {{#if this.tags.length}}
+          <div class="csl-tag-filter" role="list" aria-label="Sunucu etiketleri">
+            <strong>Etiketler</strong>
+            <a href={{this.allTagsUrl}} class={{if this.selectedTag "" "is-active"}} {{on "click" (fn this.selectTag "")}}>Tümü</a>
+            {{#each this.tagFilters as |tag|}}
+              <a href={{tag.filter_url}} class={{if (eq this.selectedTag tag.slug) "is-active" ""}} {{on "click" (fn this.selectTag tag.slug)}}>
+                #{{tag.name}} <small>{{tag.server_count}}</small>
+              </a>
+            {{/each}}
+          </div>
+        {{/if}}
 
         <div class="csl-toolbar">
           <label class="csl-search">
             <span class="sr-only">Sunucu ara</span>
-            <input type="search" value={{this.searchQuery}} placeholder="Sunucu adı, oyun veya adres ara…" {{on "input" this.updateSearch}} />
+            <input type="search" value={{this.searchQuery}} placeholder="Sunucu adı, oyun veya etiket ara…" {{on "input" this.updateSearch}} />
           </label>
           <label class="csl-sort">
             <span>Sırala</span>
@@ -606,14 +736,26 @@ export default class CrimsonServerList extends Component {
               <span>#</span>{{server.rank}}
             </div>
 
-            <a class="csl-server-card__visual" href={{server.detail_url}} aria-label="{{server.name}} tanıtımını aç">
+            <div class="csl-server-card__visual">
               {{#if server.banner_url}}
-                <img src={{server.banner_url}} alt="" loading="lazy" />
+                {{#if server.website_url}}
+                  <a
+                    class="csl-ad-banner"
+                    href={{server.website_url}}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow ugc sponsored"
+                    aria-label="{{server.name}} web sitesini aç"
+                  ><img src={{server.banner_url}} alt="{{server.name}} reklam bannerı" loading="lazy" /></a>
+                {{else}}
+                  <div class="csl-ad-banner"><img src={{server.banner_url}} alt="{{server.name}} reklam bannerı" loading="lazy" /></div>
+                {{/if}}
               {{else}}
-                <div class="csl-server-card__fallback" aria-hidden="true">{{server.game.icon}}</div>
+                <a class="csl-server-card__fallback" href={{server.detail_url}} aria-label="{{server.name}} tanıtımını aç">
+                  <span aria-hidden="true">{{server.game.icon}}</span>
+                  <small>{{server.game.name}}</small>
+                </a>
               {{/if}}
-              <span class="csl-game-label">{{server.game.icon}} {{server.game.name}}</span>
-            </a>
+            </div>
 
             <div class="csl-server-card__body">
               <header>
@@ -626,15 +768,26 @@ export default class CrimsonServerList extends Component {
 
               <div class="csl-meta">
                 <span class="csl-status csl-status--{{server.status}}"><i></i>{{server.status_label}}</span>
+                <a class="csl-category-chip csl-game--{{server.game_slug}}" href={{server.game.category_url}} {{on "click" (fn this.selectGame server.game_slug)}}>{{server.game.icon}} {{server.game.name}}</a>
                 {{#if server.language}}<span>{{server.language}}</span>{{/if}}
                 {{#if server.version}}<span>{{server.version}}</span>{{/if}}
                 {{#if server.mode}}<span>{{server.mode}}</span>{{/if}}
               </div>
 
-              <div class="csl-address">
-                <code>{{server.address}}</code>
-                <button type="button" {{on "click" (fn this.copyAddress server)}} aria-label="Sunucu adresini kopyala">Kopyala</button>
-              </div>
+              {{#if server.tag_rows.length}}
+                <div class="csl-server-tags" aria-label="Sunucu etiketleri">
+                  {{#each server.tag_rows as |tag|}}
+                    <a href={{tag.url}} {{on "click" (fn this.selectTag tag.slug)}}>#{{tag.name}}</a>
+                  {{/each}}
+                </div>
+              {{/if}}
+
+              {{#if server.can_view_endpoint}}
+                <div class="csl-address">
+                  <code>{{server.address}}</code>
+                  <button type="button" {{on "click" (fn this.copyAddress server)}} aria-label="Sunucu adresini kopyala">Kopyala</button>
+                </div>
+              {{/if}}
 
               <a class="csl-description-link" href={{server.detail_url}}>Tanıtımı, yorumları ve puanları aç →</a>
 
@@ -672,7 +825,7 @@ export default class CrimsonServerList extends Component {
                   <span>{{#if server.players_max}}/ {{server.players_max}} oyuncu{{else}}canlı oyuncu{{/if}}</span>
                 {{else}}
                   <strong>{{if (eq server.status "online") "Açık" "—"}}</strong>
-                  <span>port erişimi</span>
+                  <span>erişim durumu</span>
                 {{/if}}
               </div>
               <div class="csl-votes">
@@ -698,7 +851,7 @@ export default class CrimsonServerList extends Component {
           <div class="csl-empty">
             <span aria-hidden="true">⌁</span>
             <h2>Eşleşen sunucu bulunamadı</h2>
-            <p>Arama metnini veya oyun filtresini değiştirmeyi dene.</p>
+            <p>Arama metnini, oyun kategorisini veya etiket filtresini değiştirmeyi dene.</p>
           </div>
         {{/each}}
       </section>

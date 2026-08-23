@@ -94,6 +94,19 @@ body.crimson-server-list-route #main-outlet {
   letter-spacing: 0.15em;
 }
 
+.csl-category-link {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  color: var(--csl-accent-bright);
+  text-decoration: none;
+}
+
+.csl-category-link:hover,
+.csl-category-link:focus-visible {
+  color: #fff;
+}
+
 .csl-hero h1,
 .csl-panel h2 {
   margin: 0;
@@ -292,6 +305,11 @@ body.crimson-server-list-route #main-outlet {
   letter-spacing: 0.04em;
 }
 
+.csl-form label > small {
+  color: var(--csl-muted);
+  font-size: 0.7rem;
+}
+
 .csl-form input,
 .csl-form select,
 .csl-form textarea,
@@ -403,7 +421,7 @@ body.crimson-server-list-route #main-outlet {
   scrollbar-width: thin;
 }
 
-.csl-game-filter button {
+.csl-game-filter > a {
   --csl-game: #8b91a1;
   position: relative;
   display: grid;
@@ -416,13 +434,14 @@ body.crimson-server-list-route #main-outlet {
   color: var(--primary, #ececf2);
   font: inherit;
   text-align: start;
+  text-decoration: none;
   background: var(--csl-surface);
   border: 1px solid transparent;
   border-radius: 11px;
   cursor: pointer;
 }
 
-.csl-game-filter button::after {
+.csl-game-filter > a::after {
   content: "";
   position: absolute;
   inset: auto 10px 0;
@@ -434,14 +453,14 @@ body.crimson-server-list-route #main-outlet {
   transition: 140ms ease;
 }
 
-.csl-game-filter button:hover,
-.csl-game-filter button:focus-visible,
-.csl-game-filter button.is-active {
+.csl-game-filter > a:hover,
+.csl-game-filter > a:focus-visible,
+.csl-game-filter > a.is-active {
   background: var(--csl-surface-raised);
   border-color: color-mix(in srgb, var(--csl-game) 48%, transparent);
 }
 
-.csl-game-filter button.is-active::after {
+.csl-game-filter > a.is-active::after {
   opacity: 1;
   transform: scaleX(1);
 }
@@ -464,6 +483,55 @@ body.crimson-server-list-route #main-outlet {
 
 .csl-game-filter__all {
   font-size: 1.35rem;
+}
+
+.csl-tag-filter {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 9px 10px;
+  overflow-x: auto;
+  color: var(--csl-muted);
+  background: var(--csl-surface);
+  border-radius: 11px;
+  scrollbar-width: thin;
+}
+
+.csl-tag-filter > strong {
+  position: sticky;
+  left: 0;
+  flex: 0 0 auto;
+  padding-inline-end: 4px;
+  color: var(--primary, #fff);
+  font-size: 0.73rem;
+  background: var(--csl-surface);
+}
+
+.csl-tag-filter > a,
+.csl-server-tags > a,
+.csl-category-chip {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  color: var(--csl-muted);
+  font-size: 0.7rem;
+  font-weight: 720;
+  text-decoration: none;
+  background: var(--csl-surface-raised);
+  border-radius: 999px;
+}
+
+.csl-tag-filter > a:hover,
+.csl-tag-filter > a:focus-visible,
+.csl-tag-filter > a.is-active,
+.csl-server-tags > a:hover,
+.csl-server-tags > a:focus-visible {
+  color: #fff;
+  background: color-mix(in srgb, var(--csl-accent) 30%, var(--csl-surface-raised));
+}
+
+.csl-tag-filter small {
+  opacity: 0.72;
 }
 
 .csl-toolbar {
@@ -497,8 +565,8 @@ body.crimson-server-list-route #main-outlet {
   --csl-game: #8b91a1;
   position: relative;
   display: grid;
-  grid-template-columns: 48px 230px minmax(260px, 1fr) 170px;
-  min-height: 190px;
+  grid-template-columns: 48px minmax(300px, 500px) minmax(260px, 1fr) 170px;
+  min-height: 154px;
   overflow: hidden;
   background: var(--csl-surface);
   border: 1px solid var(--csl-border);
@@ -532,52 +600,54 @@ body.crimson-server-list-route #main-outlet {
 
 .csl-server-card__visual {
   position: relative;
-  min-height: 190px;
+  display: flex;
+  min-width: 0;
+  min-height: 154px;
+  padding: 16px;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   color: inherit;
   text-decoration: none;
   background: color-mix(in srgb, var(--csl-game) 13%, var(--csl-bg));
 }
 
-.csl-server-card__visual::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 58%, var(--csl-surface));
-  pointer-events: none;
+.csl-ad-banner {
+  display: block;
+  width: min(468px, 100%);
+  aspect-ratio: 468 / 60;
+  overflow: hidden;
+  background: #05070c;
+  border-radius: 8px;
+  box-shadow: 0 9px 24px rgba(0, 0, 0, 0.26);
 }
 
-.csl-server-card__visual img {
+.csl-ad-banner img {
+  display: block;
   width: 100%;
   height: 100%;
-  min-height: 190px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .csl-server-card__fallback {
-  display: grid;
-  min-height: 190px;
-  place-items: center;
-  font-size: 4.1rem;
+  display: flex;
+  width: min(468px, 100%);
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: inherit;
+  font-size: 2.8rem;
+  text-decoration: none;
+  background: color-mix(in srgb, var(--csl-game) 10%, var(--csl-bg));
+  border-radius: 8px;
   filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.3));
 }
 
-.csl-game-label {
-  position: absolute;
-  z-index: 1;
-  inset: auto 12px 12px;
-  width: max-content;
-  max-width: calc(100% - 24px);
-  padding: 5px 8px;
-  overflow: hidden;
-  color: #fff;
+.csl-server-card__fallback small {
+  color: var(--csl-muted);
   font-size: 0.72rem;
   font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  background: rgba(2, 6, 14, 0.72);
-  border-radius: 6px;
-  backdrop-filter: blur(8px);
 }
 
 .csl-server-card__body {
@@ -647,6 +717,29 @@ body.crimson-server-list-route #main-outlet {
   font-size: 0.7rem;
   background: rgba(255, 255, 255, 0.045);
   border-radius: 6px;
+}
+
+.csl-category-chip {
+  color: color-mix(in srgb, var(--csl-game) 78%, white);
+  background: color-mix(in srgb, var(--csl-game) 11%, var(--csl-surface-raised));
+}
+
+.csl-category-chip:hover,
+.csl-category-chip:focus-visible {
+  color: #fff;
+  background: color-mix(in srgb, var(--csl-game) 24%, var(--csl-surface-raised));
+}
+
+.csl-server-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.csl-server-tags > a {
+  padding: 3px 7px;
+  font-size: 0.66rem;
 }
 
 .csl-status {
@@ -923,7 +1016,7 @@ body.crimson-server-list-route #main-outlet {
 
 .csl-detail-hero {
   position: relative;
-  min-height: clamp(300px, 38vw, 480px);
+  min-height: clamp(390px, 38vw, 480px);
   overflow: hidden;
   background:
     radial-gradient(circle at 72% 22%, color-mix(in srgb, var(--csl-game) 23%, transparent), transparent 42%),
@@ -990,6 +1083,19 @@ body.crimson-server-list-route #main-outlet {
   color: rgba(255, 255, 255, 0.85);
   background: rgba(2, 6, 14, 0.58);
   backdrop-filter: blur(10px);
+}
+
+.csl-server-tags--hero > a {
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(2, 6, 14, 0.62);
+  backdrop-filter: blur(10px);
+}
+
+.csl-ad-banner--detail {
+  margin-top: 15px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .csl-detail-summary {
@@ -1352,7 +1458,7 @@ body.crimson-server-list-route #main-outlet {
 
 @media (max-width: 1180px) {
   .csl-server-card {
-    grid-template-columns: 44px 180px minmax(230px, 1fr) 150px;
+    grid-template-columns: 44px minmax(260px, 360px) minmax(230px, 1fr) 150px;
   }
 
   .csl-game-filter {
@@ -1448,15 +1554,15 @@ body.crimson-server-list-route #main-outlet {
     backdrop-filter: blur(8px);
   }
 
-  .csl-server-card__visual,
-  .csl-server-card__visual img,
-  .csl-server-card__fallback {
-    min-height: 142px;
-    height: 142px;
+  .csl-server-card__visual {
+    min-height: 86px;
+    height: auto;
+    padding: 13px 13px 13px 54px;
   }
 
-  .csl-server-card__visual::after {
-    background: linear-gradient(180deg, transparent 55%, var(--csl-surface));
+  .csl-server-card__fallback {
+    min-height: 60px;
+    height: auto;
   }
 
   .csl-server-card__body {
@@ -1483,7 +1589,7 @@ body.crimson-server-list-route #main-outlet {
   }
 
   .csl-detail-hero {
-    min-height: 350px;
+    min-height: 420px;
     border-radius: 16px;
   }
 
@@ -1496,6 +1602,10 @@ body.crimson-server-list-route #main-outlet {
   .csl-detail-hero__content {
     inset: auto 18px 22px;
     width: calc(100% - 36px);
+  }
+
+  .csl-ad-banner--detail {
+    width: min(468px, 100%);
   }
 
   .csl-detail-summary {
@@ -1551,7 +1661,7 @@ body.crimson-server-list-route #main-outlet {
   }
 
   .csl-detail-hero {
-    min-height: 330px;
+    min-height: 400px;
   }
 
   .csl-detail-hero__content h1 {

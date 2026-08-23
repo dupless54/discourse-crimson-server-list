@@ -3,12 +3,17 @@
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
 
-## 2.1.0 özellikleri
+## 2.2.0 özellikleri
 
 - Bağımsız `/servers` top listesi ve `/servers/:slug` tanıtım sayfaları
 - Minecraft, FiveM, Rust, ARK, Silkroad Online, Metin2, Knight Online ve
-  World of Warcraft filtreleri
-- GIF/WebP dahil hareketli reklam bannerları
+  World of Warcraft için kategori gibi çalışan paylaşılabilir filtre adresleri
+- İlan başına en fazla 8 etiket; etikete tıklayarak oyunlar arası veya seçili
+  oyun içinde filtreleme
+- Liste ve tanıtım sayfasında oranı bozulmadan gösterilen standart 468×60
+  GIF/WebP reklam bannerları
+- Banner tıklamasının sunucu web sitesini yeni sekmede `nofollow`, `ugc`,
+  `sponsored`, `noopener` ve `noreferrer` nitelikleriyle açması
 - Oturum açmış üyeler için sunucu başvurusu; her kayıt Discourse kullanıcı
   hesabının sahibiyle ilişkilidir
 - Sunucu sahibinin kendi tanıtımını sonradan düzenlemesi
@@ -21,6 +26,11 @@ onaylı, canlı durum destekli private oyun sunucusu top listesi.
 - Forum üyelerinin yayınlanmış bir ilan için sahiplik talebi göndermesi;
   yönetici onayında sahipliğin talep eden hesaba atomik aktarılması
 - Yönetici ve moderatörlerin ilanı ayrıntı sayfasından kalıcı olarak silmesi
+- Host, bağlantı/sorgu portu, sorgu adaptörü, yanıt süresi ve sorgu hata
+  ayrıntılarının yalnızca ilan sahibi ile yöneticilere gönderilmesi; son kontrol
+  zamanının ziyaretçilere güven göstergesi olarak açık kalması
+- Oturum açmamış ziyaretçiye de görünen, giriş sonrası aynı ilana döndüren
+  sahiplenme çağrısı
 - Cosmetic eklentisiyle uyumlu, avatar ve kullanıcı metnini ayrı hedefleyen
   kullanıcı kartı sarmalayıcıları
 - Eski bir sorgu portu artık izin listesinde olmasa bile adres alanları
@@ -88,7 +98,7 @@ bilinçli biçimde eklenmelidir.
 
 1. Bu dizini mevcut eklenti Git deposunun köküne yükleyin.
 2. `/var/discourse` altında `./launcher rebuild app` çalıştırın. Yeni migration,
-   canlı durum ve değerlendirme alanlarını otomatik oluşturur.
+   etiket, canlı durum ve değerlendirme alanlarını otomatik oluşturur.
 3. Yönetim panelinde **Eklentiler → Crimson server list** ayarlarını gözden
    geçirin.
 4. `/servers` adresini açın.
@@ -102,6 +112,7 @@ kayıtları korunur.
 - Günlük oylar: `crimson_server_votes`
 - Yorum ve yıldızlar: `crimson_server_reviews`
 - Sahiplik talepleri: `crimson_server_claim_requests`
+- Sunucu etiketleri: `crimson_game_servers.tags` JSONB alanı ve GIN indeksi
 - Başvuru, oy, yorum, elle yenileme ve sahip düzenlemesi oturum gerektirir.
 - Bir kullanıcı aynı sunucuya yalnızca bir değerlendirme bırakabilir; yeniden
   gönderdiğinde mevcut değerlendirmesi güncellenir.
@@ -113,6 +124,8 @@ kayıtları korunur.
   ilan başına günde en fazla bir artar. Ham IP adresi veritabanına yazılmaz.
 - Yayınlanmamış kayıt yalnızca sahibi ve yöneticiler tarafından tanıtım
   adresinde görüntülenebilir.
+- Yayındaki kayıtlarda ağ uç noktası ve sorgu ayrıntıları API seviyesinde ilan
+  sahibi/yönetici dışındaki kullanıcılardan gizlenir; CSS ile saklama yapılmaz.
 - Web, Discord ve banner alanlarında yalnızca `http`/`https` URL'leri kabul
   edilir. Banner istemci tarayıcısında gösterilir; canlı oyun sorgusu sunucuda
   yalnızca yukarıdaki ağ politikası içinden yapılır.
