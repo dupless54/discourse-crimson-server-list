@@ -1,0 +1,16 @@
+plugins:
+  crimson_server_list_enabled:
+    default: true
+    client: true
+  crimson_server_list_submission_enabled:
+    default: true
+    client: true
+  crimson_server_list_require_approval:
+    default: true
+  crimson_server_list_votes_enabled:
+    default: true
+    client: true
+  crimson_server_list_results_limit:
+    default: 100
+    min: 10
+    max: 200

@@ -1,0 +1,21 @@
+tr:
+  site_settings:
+    crimson_server_list_enabled: "Bağımsız private server top listesini etkinleştir."
+    crimson_server_list_submission_enabled: "Oturum açmış üyelerin sunucu başvurusu göndermesine izin ver."
+    crimson_server_list_require_approval: "Yeni sunucu başvurularını yayınlamadan önce yönetici onayına gönder."
+    crimson_server_list_votes_enabled: "Üyelerin her sunucuya günde bir kez oy vermesine izin ver."
+    crimson_server_list_results_limit: "Top listesinde tek seferde gösterilecek en fazla sunucu sayısı."
+  crimson_server_list:
+    statuses:
+      unknown: "Doğrulanmadı"
+      online: "Çevrimiçi"
+      offline: "Çevrimdışı"
+      maintenance: "Bakımda"
+    messages:
+      submitted: "Sunucun yönetici onayına gönderildi."
+      published: "Sunucu yayınlandı."
+      voted: "Oyun kaydedildi. Yarın yeniden oy verebilirsin."
+    errors:
+      submissions_disabled: "Sunucu başvuruları şu anda kapalı."
+      votes_disabled: "Sunucu oylaması şu anda kapalı."
+      already_voted: "Bu sunucuya bugün zaten oy verdin."

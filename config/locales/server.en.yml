@@ -1,0 +1,21 @@
+en:
+  site_settings:
+    crimson_server_list_enabled: "Enable the independent private server top list."
+    crimson_server_list_submission_enabled: "Allow signed-in members to submit servers."
+    crimson_server_list_require_approval: "Require administrator approval before publishing a submission."
+    crimson_server_list_votes_enabled: "Allow members to vote for each server once per day."
+    crimson_server_list_results_limit: "Maximum number of servers returned by the top list."
+  crimson_server_list:
+    statuses:
+      unknown: "Unverified"
+      online: "Online"
+      offline: "Offline"
+      maintenance: "Maintenance"
+    messages:
+      submitted: "Your server was submitted for administrator approval."
+      published: "The server was published."
+      voted: "Your vote was recorded. You can vote again tomorrow."
+    errors:
+      submissions_disabled: "Server submissions are currently disabled."
+      votes_disabled: "Server voting is currently disabled."
+      already_voted: "You have already voted for this server today."
