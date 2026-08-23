@@ -15,6 +15,8 @@ export default class CrimsonServerDetail extends Component {
   @tracked errorMessage = "";
   @tracked reviewRating = this.mineReview?.rating || 0;
   @tracked reviewBody = this.mineReview?.body || "";
+  @tracked editGameSlug = this.args.model?.server?.game_slug || "minecraft";
+  @tracked claimStatus = this.args.model?.viewer?.claim_status || "";
 
   get viewer() {
     return this.args.model?.viewer || {};
@@ -59,6 +61,22 @@ export default class CrimsonServerDetail extends Component {
     return `${average} / 5`;
   }
 
+  get editGameFields() {
+    const game = this.games.find(
+      (candidate) => candidate.slug === this.editGameSlug,
+    );
+    const values =
+      this.editGameSlug === this.server.game_slug
+        ? this.server.game_details || {}
+        : {};
+
+    return (game?.fields || []).map((field) => ({
+      ...field,
+      inputName: `game_detail__${field.key}`,
+      value: values[field.key] ?? "",
+    }));
+  }
+
   @action
   toggleEdit() {
     this.showEdit = !this.showEdit;
@@ -73,6 +91,11 @@ export default class CrimsonServerDetail extends Component {
   @action
   updateReviewBody(event) {
     this.reviewBody = event.currentTarget.value;
+  }
+
+  @action
+  updateEditGame(event) {
+    this.editGameSlug = event.currentTarget.value;
   }
 
   @action
@@ -143,8 +166,7 @@ export default class CrimsonServerDetail extends Component {
     }
 
     const form = event.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
-    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
+    const data = this.serverFormData(form);
     const previousSlug = this.server.slug;
 
     this.busyAction = "edit";
@@ -156,6 +178,7 @@ export default class CrimsonServerDetail extends Component {
         { type: "PUT", data },
       );
       this.server = response.server;
+      this.editGameSlug = response.server.game_slug;
       this.announcement = response.message;
       this.showEdit = false;
 
@@ -165,6 +188,54 @@ export default class CrimsonServerDetail extends Component {
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
+      this.busyAction = "";
+    }
+  }
+
+  @action
+  async requestOwnership() {
+    if (this.busyAction || this.claimStatus === "pending") {
+      return;
+    }
+
+    this.busyAction = "claim";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}/claim.json`,
+        { type: "POST" },
+      );
+      this.claimStatus = response.claim.status;
+      this.announcement = response.message;
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyAction = "";
+    }
+  }
+
+  @action
+  async deleteServer() {
+    if (this.busyAction) {
+      return;
+    }
+
+    if (!window.confirm(`“${this.server.name}” ilanını kalıcı olarak silmek istiyor musun?`)) {
+      return;
+    }
+
+    this.busyAction = "delete";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}.json`,
+        { type: "DELETE" },
+      );
+      window.location.assign(response.redirect_url || "/servers");
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
       this.busyAction = "";
     }
   }
@@ -234,6 +305,27 @@ export default class CrimsonServerDetail extends Component {
     this.errorMessage = "";
   }
 
+  serverFormData(form) {
+    const data = Object.fromEntries(new FormData(form).entries());
+    const gameDetails = {};
+
+    for (const [key, value] of Object.entries(data)) {
+      if (key.startsWith("game_detail__")) {
+        const detailKey = key.slice("game_detail__".length);
+        const normalized = String(value || "").trim();
+        if (normalized) {
+          gameDetails[detailKey] = normalized;
+        }
+        delete data[key];
+      }
+    }
+
+    data.game_details = gameDetails;
+    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
+    data.banner_url = form.elements.banner_url?.value?.trim() || "";
+    return data;
+  }
+
   errorText(error) {
     return (
       error?.jqXHR?.responseJSON?.errors?.join(" ") ||
@@ -284,13 +376,18 @@ export default class CrimsonServerDetail extends Component {
             <div class="csl-owner csl-owner--detail">
               {{#if this.server.owner}}
                 <a
-                  class="trigger-user-card"
+                  class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
                   data-user-card={{this.server.owner.username}}
                   href={{this.server.owner.profile_url}}
+                  aria-label="@{{this.server.owner.username}} kullanıcı kartını aç"
                 >
                   {{#if this.server.owner.avatar_url}}<img class="avatar" src={{this.server.owner.avatar_url}} alt="" />{{/if}}
-                  <span><strong>{{this.server.owner.name}}</strong><small>@{{this.server.owner.username}} · liste sahibi</small></span>
                 </a>
+                <a
+                  class="csl-owner__identity trigger-user-card"
+                  data-user-card={{this.server.owner.username}}
+                  href={{this.server.owner.profile_url}}
+                ><span><strong>{{this.server.owner.name}}</strong><small>@{{this.server.owner.username}} · liste sahibi</small></span></a>
               {{/if}}
             </div>
           </div>
@@ -307,6 +404,7 @@ export default class CrimsonServerDetail extends Component {
             </div>
             <div><strong>{{this.server.vote_count}}</strong><span>toplam oy</span></div>
             <div><strong>{{this.scoreLabel}}</strong><span>{{this.server.review_count}} değerlendirme</span></div>
+            <div><strong>{{this.server.view_count}}</strong><span>görüntülenme</span></div>
           </div>
 
           <div class="csl-detail-actions">
@@ -327,6 +425,14 @@ export default class CrimsonServerDetail extends Component {
             {{#if this.canRefresh}}
               <button class="csl-button" type="button" disabled={{eq this.busyAction "refresh"}} {{on "click" this.refreshStatus}}>Canlı durumu yenile</button>
             {{/if}}
+            {{#if (eq this.claimStatus "pending")}}
+              <span class="csl-button csl-button--disabled">Sahiplik talebi inceleniyor</span>
+            {{else if this.viewer.can_claim}}
+              <button class="csl-button" type="button" disabled={{eq this.busyAction "claim"}} {{on "click" this.requestOwnership}}>Bu sunucuyu sahiplen</button>
+            {{/if}}
+            {{#if this.viewer.can_delete}}
+              <button class="csl-button csl-button--danger" type="button" disabled={{eq this.busyAction "delete"}} {{on "click" this.deleteServer}}>İlanı sil</button>
+            {{/if}}
           </div>
         </section>
 
@@ -343,9 +449,9 @@ export default class CrimsonServerDetail extends Component {
             <form class="csl-form" {{on "submit" this.updateServer}}>
               <label>
                 <span>Oyun</span>
-                <select name="game_slug" required>
+                <select name="game_slug" required {{on "change" this.updateEditGame}}>
                   {{#each this.games as |game|}}
-                    <option value={{game.slug}} selected={{eq game.slug this.server.game_slug}}>{{game.icon}} {{game.name}}</option>
+                    <option value={{game.slug}} selected={{eq game.slug this.editGameSlug}}>{{game.icon}} {{game.name}}</option>
                   {{/each}}
                 </select>
               </label>
@@ -361,9 +467,30 @@ export default class CrimsonServerDetail extends Component {
               <label><span>Ülke kodu</span><input name="country_code" value={{this.server.country_code}} maxlength="2" /></label>
               <label><span>Sürüm</span><input name="version" value={{this.server.version}} maxlength="60" /></label>
               <label><span>Oyun modu</span><input name="mode" value={{this.server.mode}} maxlength="60" /></label>
+              {{#if this.editGameFields.length}}
+                <div class="csl-form-section csl-form__wide">
+                  <strong>Oyuna özel bilgiler</strong>
+                  <span>Level/CAP, oranlar ve oyun türüne özgü değerler.</span>
+                </div>
+                {{#each this.editGameFields as |field|}}
+                  <label>
+                    <span>{{field.label}}{{#if field.unit}} ({{field.unit}}){{/if}}</span>
+                    <input
+                      name={{field.inputName}}
+                      value={{field.value}}
+                      type={{field.type}}
+                      min={{field.min}}
+                      max={{field.max}}
+                      step={{field.step}}
+                      maxlength="100"
+                      placeholder={{field.placeholder}}
+                    />
+                  </label>
+                {{/each}}
+              {{/if}}
               <label class="csl-form__wide"><span>Web sitesi</span><input name="website_url" value={{this.server.website_url}} type="url" /></label>
               <label class="csl-form__wide"><span>Discord daveti</span><input name="discord_url" value={{this.server.discord_url}} type="url" /></label>
-              <label class="csl-form__wide"><span>Hareketli reklam bannerı (GIF/WebP destekli)</span><input name="banner_url" value={{this.server.banner_url}} type="url" /></label>
+              <label class="csl-form__wide"><span>Hareketli reklam bannerı (GIF/WebP destekli)</span><input name="banner_url" value={{this.server.banner_url}} type="text" inputmode="url" autocomplete="off" /></label>
               <label class="csl-form__wide"><span>Detaylı açıklama</span><textarea name="description" value={{this.server.description}} maxlength="4000" rows="7"></textarea></label>
               <label class="csl-check csl-form__wide"><input name="monitoring_enabled" type="checkbox" checked={{this.server.monitoring_enabled}} /><span>Güvenli canlı durum sorgusunu etkin tut</span></label>
               <div class="csl-form__actions csl-form__wide">
@@ -381,6 +508,17 @@ export default class CrimsonServerDetail extends Component {
               <p>{{this.server.description}}</p>
             {{else}}
               <p class="csl-muted-copy">Sunucu sahibi henüz ayrıntılı bir tanıtım eklememiş.</p>
+            {{/if}}
+
+            {{#if this.server.game_detail_rows.length}}
+              <dl class="csl-game-details">
+                {{#each this.server.game_detail_rows as |detail|}}
+                  <div>
+                    <dt>{{detail.label}}</dt>
+                    <dd>{{detail.value}}{{#if detail.unit}} {{detail.unit}}{{/if}}</dd>
+                  </div>
+                {{/each}}
+              </dl>
             {{/if}}
 
             <dl class="csl-technical">
@@ -425,10 +563,19 @@ export default class CrimsonServerDetail extends Component {
             <div class="csl-review-list">
               {{#each this.reviews as |review|}}
                 <article class="csl-review">
-                  <a class="csl-review__user trigger-user-card" data-user-card={{review.user.username}} href={{review.user.profile_url}}>
-                    <img class="avatar" src={{review.user.avatar_url}} alt="" loading="lazy" />
-                    <span><strong>{{review.user.name}}</strong><small>@{{review.user.username}}</small></span>
-                  </a>
+                  <div class="csl-review__user">
+                    <a
+                      class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
+                      data-user-card={{review.user.username}}
+                      href={{review.user.profile_url}}
+                      aria-label="@{{review.user.username}} kullanıcı kartını aç"
+                    ><img class="avatar" src={{review.user.avatar_url}} alt="" loading="lazy" /></a>
+                    <a
+                      class="csl-review__identity trigger-user-card"
+                      data-user-card={{review.user.username}}
+                      href={{review.user.profile_url}}
+                    ><span><strong>{{review.user.name}}</strong><small>@{{review.user.username}}</small></span></a>
+                  </div>
                   <div class="csl-review__rating" aria-label="{{review.rating}} yıldız">★ {{review.rating}}/5</div>
                   <p>{{review.body}}</p>
                   {{#if review.mine}}<span class="csl-review__mine">Senin değerlendirmen</span>{{/if}}

@@ -10,6 +10,7 @@ import { eq } from "discourse/truth-helpers";
 export default class CrimsonServerList extends Component {
   @tracked servers = this.args.model?.servers || [];
   @tracked pendingServers = this.args.model?.pending_servers || [];
+  @tracked pendingClaims = this.args.model?.pending_claims || [];
   @tracked games = this.args.model?.games || [];
   @tracked stats = this.args.model?.stats || {};
   @tracked selectedGame = "all";
@@ -22,6 +23,9 @@ export default class CrimsonServerList extends Component {
   @tracked announcement = "";
   @tracked errorMessage = "";
   @tracked submittedServer = null;
+  @tracked submissionGameSlug =
+    this.args.model?.games?.[0]?.slug || "minecraft";
+  @tracked busyClaimId = null;
 
   get viewer() {
     return this.args.model?.viewer || {};
@@ -84,6 +88,20 @@ export default class CrimsonServerList extends Component {
     return servers.map((server, index) => ({ ...server, rank: index + 1 }));
   }
 
+  get submissionGameFields() {
+    const game = this.games.find(
+      (candidate) => candidate.slug === this.submissionGameSlug,
+    );
+    return (game?.fields || []).map((field) => ({
+      ...field,
+      inputName: `game_detail__${field.key}`,
+    }));
+  }
+
+  get moderationCount() {
+    return this.pendingServers.length + this.pendingClaims.length;
+  }
+
   @action
   selectGame(slug) {
     this.selectedGame = slug;
@@ -97,6 +115,11 @@ export default class CrimsonServerList extends Component {
   @action
   updateSort(event) {
     this.sortMode = event.currentTarget.value;
+  }
+
+  @action
+  updateSubmissionGame(event) {
+    this.submissionGameSlug = event.currentTarget.value;
   }
 
   @action
@@ -117,8 +140,7 @@ export default class CrimsonServerList extends Component {
   async submitServer(event) {
     event.preventDefault();
     const form = event.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
-    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
+    const data = this.serverFormData(form);
 
     this.isSubmitting = true;
     this.clearMessages();
@@ -192,6 +214,16 @@ export default class CrimsonServerList extends Component {
   }
 
   @action
+  async approveClaim(claim) {
+    await this.moderateClaim(claim, "approved");
+  }
+
+  @action
+  async rejectClaim(claim) {
+    await this.moderateClaim(claim, "rejected");
+  }
+
+  @action
   async copyAddress(server) {
     try {
       await navigator.clipboard.writeText(server.address);
@@ -234,6 +266,36 @@ export default class CrimsonServerList extends Component {
     }
   }
 
+  async moderateClaim(claim, status) {
+    if (this.busyClaimId) {
+      return;
+    }
+
+    this.busyClaimId = claim.id;
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/admin/claims/${claim.id}.json`,
+        { type: "PUT", data: { status } },
+      );
+      this.pendingClaims = this.pendingClaims.filter((candidate) =>
+        status === "approved"
+          ? candidate.server.id !== claim.server.id
+          : candidate.id !== claim.id,
+      );
+      this.servers = this.servers.map((server) =>
+        server.id === response.server.id ? response.server : server,
+      );
+      this.announcement = response.message;
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+      popupAjaxError(error);
+    } finally {
+      this.busyClaimId = null;
+    }
+  }
+
   clearMessages() {
     this.announcement = "";
     this.errorMessage = "";
@@ -257,6 +319,27 @@ export default class CrimsonServerList extends Component {
       game_count:
         Number(this.stats.game_count || 0) + (gameWasEmpty ? 1 : 0),
     };
+  }
+
+  serverFormData(form) {
+    const data = Object.fromEntries(new FormData(form).entries());
+    const gameDetails = {};
+
+    for (const [key, value] of Object.entries(data)) {
+      if (key.startsWith("game_detail__")) {
+        const detailKey = key.slice("game_detail__".length);
+        const normalized = String(value || "").trim();
+        if (normalized) {
+          gameDetails[detailKey] = normalized;
+        }
+        delete data[key];
+      }
+    }
+
+    data.game_details = gameDetails;
+    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
+    data.banner_url = form.elements.banner_url?.value?.trim() || "";
+    return data;
   }
 
   errorText(error) {
@@ -293,7 +376,7 @@ export default class CrimsonServerList extends Component {
           {{#if this.viewer.is_admin}}
             <button class="csl-button" type="button" {{on "click" this.toggleModeration}}>
               Onay kuyruğu
-              <span class="csl-button__count">{{this.pendingServers.length}}</span>
+              <span class="csl-button__count">{{this.moderationCount}}</span>
             </button>
           {{/if}}
         </div>
@@ -329,9 +412,9 @@ export default class CrimsonServerList extends Component {
           <form class="csl-form" {{on "submit" this.submitServer}}>
             <label>
               <span>Oyun</span>
-              <select name="game_slug" required>
+              <select name="game_slug" required {{on "change" this.updateSubmissionGame}}>
                 {{#each this.games as |game|}}
-                  <option value={{game.slug}}>{{game.icon}} {{game.name}}</option>
+                  <option value={{game.slug}} selected={{eq game.slug this.submissionGameSlug}}>{{game.icon}} {{game.name}}</option>
                 {{/each}}
               </select>
             </label>
@@ -371,6 +454,26 @@ export default class CrimsonServerList extends Component {
               <span>Oyun modu</span>
               <input name="mode" maxlength="60" placeholder="Survival, Roleplay, PvP…" />
             </label>
+            {{#if this.submissionGameFields.length}}
+              <div class="csl-form-section csl-form__wide">
+                <strong>Oyuna özel bilgiler</strong>
+                <span>Seçtiğin oyuna göre ilan sayfasında gösterilecek teknik özellikler.</span>
+              </div>
+              {{#each this.submissionGameFields as |field|}}
+                <label>
+                  <span>{{field.label}}{{#if field.unit}} ({{field.unit}}){{/if}}</span>
+                  <input
+                    name={{field.inputName}}
+                    type={{field.type}}
+                    min={{field.min}}
+                    max={{field.max}}
+                    step={{field.step}}
+                    maxlength="100"
+                    placeholder={{field.placeholder}}
+                  />
+                </label>
+              {{/each}}
+            {{/if}}
             <label class="csl-form__wide">
               <span>Web sitesi</span>
               <input name="website_url" type="url" placeholder="https://…" />
@@ -381,7 +484,7 @@ export default class CrimsonServerList extends Component {
             </label>
             <label class="csl-form__wide">
               <span>Hareketli reklam bannerı</span>
-              <input name="banner_url" type="url" placeholder="https://…/banner.gif veya banner.webp" />
+              <input name="banner_url" type="text" inputmode="url" autocomplete="off" placeholder="https://…/banner.gif veya banner.webp" />
             </label>
             <label class="csl-form__wide">
               <span>Detaylı açıklama</span>
@@ -426,6 +529,38 @@ export default class CrimsonServerList extends Component {
             </article>
           {{else}}
             <p class="csl-empty csl-empty--compact">Onay bekleyen sunucu yok.</p>
+          {{/each}}
+
+          <header class="csl-moderation__subhead">
+            <div>
+              <p class="csl-eyebrow">SAHİPLİK</p>
+              <h2>Sunucu sahiplenme talepleri</h2>
+            </div>
+            <p>{{this.pendingClaims.length}} bekleyen talep</p>
+          </header>
+
+          {{#each this.pendingClaims as |claim|}}
+            <article class="csl-pending-row csl-claim-row">
+              <a
+                class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
+                data-user-card={{claim.requester.username}}
+                href={{claim.requester.profile_url}}
+              >
+                <img class="avatar" src={{claim.requester.avatar_url}} alt="" loading="lazy" />
+              </a>
+              <div>
+                <strong>{{claim.server.name}}</strong>
+                <span>@{{claim.requester.username}} bu ilanın sahipliğini istiyor.</span>
+                <p>Mevcut sahip: @{{claim.server.current_owner_username}}</p>
+                {{#if claim.note}}<p>{{claim.note}}</p>{{/if}}
+              </div>
+              <div class="csl-pending-row__actions">
+                <button class="csl-button" type="button" disabled={{eq this.busyClaimId claim.id}} {{on "click" (fn this.rejectClaim claim)}}>Reddet</button>
+                <button class="csl-button csl-button--primary" type="button" disabled={{eq this.busyClaimId claim.id}} {{on "click" (fn this.approveClaim claim)}}>Sahipliği aktar</button>
+              </div>
+            </article>
+          {{else}}
+            <p class="csl-empty csl-empty--compact">Bekleyen sahiplik talebi yok.</p>
           {{/each}}
         </section>
       {{/if}}
@@ -505,10 +640,23 @@ export default class CrimsonServerList extends Component {
 
               <footer>
                 {{#if server.owner}}
-                  <a class="csl-owner trigger-user-card" data-user-card={{server.owner.username}} href={{server.owner.profile_url}}>
-                    {{#if server.owner.avatar_url}}<img class="avatar" src={{server.owner.avatar_url}} alt="" loading="lazy" />{{/if}}
-                    <span>@{{server.owner.username}} tarafından eklendi</span>
-                  </a>
+                  <div class="csl-owner">
+                    {{#if server.owner.avatar_url}}
+                      <a
+                        class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
+                        data-user-card={{server.owner.username}}
+                        href={{server.owner.profile_url}}
+                        aria-label="@{{server.owner.username}} kullanıcı kartını aç"
+                      >
+                        <img class="avatar" src={{server.owner.avatar_url}} alt="" loading="lazy" />
+                      </a>
+                    {{/if}}
+                    <a
+                      class="csl-owner__identity trigger-user-card"
+                      data-user-card={{server.owner.username}}
+                      href={{server.owner.profile_url}}
+                    >@{{server.owner.username}} tarafından eklendi</a>
+                  </div>
                 {{/if}}
                 <nav aria-label="Sunucu bağlantıları">
                   {{#if server.website_url}}<a href={{server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Web</a>{{/if}}

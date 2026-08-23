@@ -28,6 +28,10 @@ tr:
       updated_pending: "Değişiklikler kaydedildi ve yeniden yönetici onayına gönderildi."
       reviewed: "Yorumun ve yıldız değerlendirmen kaydedildi."
       review_deleted: "Değerlendirmen kaldırıldı."
+      deleted: "Sunucu ilanı silindi."
+      claim_submitted: "Sahiplik talebin yönetici onayına gönderildi."
+      claim_approved: "Sahiplik talebi onaylandı ve ilan yeni forum hesabına aktarıldı."
+      claim_rejected: "Sahiplik talebi reddedildi."
     errors:
       submissions_disabled: "Sunucu başvuruları şu anda kapalı."
       votes_disabled: "Sunucu oylaması şu anda kapalı."
@@ -35,3 +39,7 @@ tr:
       reviews_disabled: "Sunucu değerlendirmeleri şu anda kapalı."
       not_owner: "Bu sunucuyu düzenleme yetkin yok."
       unsafe_endpoint: "Sunucu adresi veya sorgu portu güvenlik politikasına uygun değil."
+      already_owner: "Bu sunucu ilanının sahibi zaten sensin."
+      claim_pending: "Bu sunucu için bekleyen bir sahiplik talebin zaten var."
+      invalid_claim_decision: "Geçersiz sahiplik kararı."
+      claim_already_reviewed: "Bu sahiplik talebi daha önce sonuçlandırılmış."

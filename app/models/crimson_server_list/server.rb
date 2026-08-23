@@ -17,6 +17,10 @@ module ::CrimsonServerList
              class_name: "::CrimsonServerList::Review",
              dependent: :destroy,
              inverse_of: :server
+    has_many :claim_requests,
+             class_name: "::CrimsonServerList::ClaimRequest",
+             dependent: :destroy,
+             inverse_of: :server
 
     before_validation :ensure_slug
 
@@ -52,6 +56,7 @@ module ::CrimsonServerList
               :vote_count,
               :review_count,
               :rating_sum,
+              :view_count,
               numericality: {
                 only_integer: true,
                 greater_than_or_equal_to: 0,
@@ -62,6 +67,7 @@ module ::CrimsonServerList
     validate :external_urls_are_safe
     validate :host_is_allowed
     validate :query_endpoint_is_allowed
+    validate :game_details_are_valid
 
     scope :publicly_visible, -> { where(approved: true, enabled: true) }
 
@@ -100,6 +106,8 @@ module ::CrimsonServerList
 
     def external_urls_are_safe
       %i[website_url discord_url banner_url].each do |attribute|
+        next unless new_record? || will_save_change_to_attribute?(attribute)
+
         value = public_send(attribute).to_s.strip
         next if value.blank?
 
@@ -116,6 +124,10 @@ module ::CrimsonServerList
     end
 
     def query_endpoint_is_allowed
+      endpoint_changed =
+        new_record? || will_save_change_to_game_slug? || will_save_change_to_host? ||
+          will_save_change_to_port? || will_save_change_to_query_port?
+      return unless endpoint_changed
       return if game_slug.blank? || effective_query_port.blank?
       return if CrimsonServerList::NetworkPolicy.port_allowed?(game_slug, effective_query_port)
 
@@ -123,11 +135,44 @@ module ::CrimsonServerList
     end
 
     def host_is_allowed
+      return unless new_record? || will_save_change_to_host?
+
       normalized = CrimsonServerList::NetworkPolicy.normalize_host(host)
       return if CrimsonServerList::NetworkPolicy.hostname_valid?(normalized) &&
         CrimsonServerList::NetworkPolicy.hostname_allowed?(normalized)
 
       errors.add(:host, :invalid)
+    end
+
+    def game_details_are_valid
+      values = game_details.respond_to?(:to_h) ? game_details.to_h : {}
+      fields = CrimsonServerList.game_fields(game_slug)
+      allowed = fields.index_by { |field| field[:key] }
+
+      values.each do |key, value|
+        field = allowed[key.to_s]
+        unless field
+          errors.add(:game_details, :invalid)
+          next
+        end
+
+        text = value.to_s.strip
+        next if text.blank?
+
+        if field[:type] == "number"
+          begin
+            number = Float(text)
+            valid = number.finite?
+            valid &&= number >= field[:min].to_f if field.key?(:min)
+            valid &&= number <= field[:max].to_f if field.key?(:max)
+            errors.add(:game_details, :invalid) unless valid
+          rescue ArgumentError, TypeError
+            errors.add(:game_details, :invalid)
+          end
+        elsif text.length > 100
+          errors.add(:game_details, :too_long, count: 100)
+        end
+      end
     end
   end
 end

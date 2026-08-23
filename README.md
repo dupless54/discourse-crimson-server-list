@@ -3,7 +3,7 @@
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
 
-## 2.0.0 özellikleri
+## 2.1.0 özellikleri
 
 - Bağımsız `/servers` top listesi ve `/servers/:slug` tanıtım sayfaları
 - Minecraft, FiveM, Rust, ARK, Silkroad Online, Metin2, Knight Online ve
@@ -15,6 +15,16 @@ onaylı, canlı durum destekli private oyun sunucusu top listesi.
 - İsteğe bağlı olarak sahip düzenlemelerini tekrar yönetici onayına gönderme
 - Hesap ve sunucu başına takvim gününde bir oy
 - Forum üyelerinden tekil 1–5 yıldız puanı ve metin yorumu
+- Oyun türüne göre değişen ilan alanları: CAP/seviye, EXP/SP/drop/yang/NP
+  oranları, wipe takvimi, framework, harita ve realm bilgileri
+- Her ilan için günlük tekil ziyaretçi temelli görüntülenme sayacı
+- Forum üyelerinin yayınlanmış bir ilan için sahiplik talebi göndermesi;
+  yönetici onayında sahipliğin talep eden hesaba atomik aktarılması
+- Yönetici ve moderatörlerin ilanı ayrıntı sayfasından kalıcı olarak silmesi
+- Cosmetic eklentisiyle uyumlu, avatar ve kullanıcı metnini ayrı hedefleyen
+  kullanıcı kartı sarmalayıcıları
+- Eski bir sorgu portu artık izin listesinde olmasa bile adres alanları
+  değiştirilmeden banner/açıklama gibi güvenli ilan bilgilerinin güncellenmesi
 - Yönetici onay/red kuyruğu
 - Sidekiq üzerinden periyodik canlı durum yenileme ve kısa süreli önbellek
 - Masaüstü, tablet ve telefon için duyarlı arayüz
@@ -91,11 +101,16 @@ kayıtları korunur.
 - Sunucular: `crimson_game_servers`
 - Günlük oylar: `crimson_server_votes`
 - Yorum ve yıldızlar: `crimson_server_reviews`
+- Sahiplik talepleri: `crimson_server_claim_requests`
 - Başvuru, oy, yorum, elle yenileme ve sahip düzenlemesi oturum gerektirir.
 - Bir kullanıcı aynı sunucuya yalnızca bir değerlendirme bırakabilir; yeniden
   gönderdiğinde mevcut değerlendirmesi güncellenir.
 - Sunucu sahibi yalnızca kendi kaydını düzenleyebilir; yönetici bütün kayıtları
   yönetebilir.
+- Yönetici ve moderatörler ilan silebilir; sahiplik aktarımını yalnızca yönetici
+  onaylayabilir.
+- Görüntülenme sayacı, oturum açmış hesap veya anonim tarayıcı parmak izi için
+  ilan başına günde en fazla bir artar. Ham IP adresi veritabanına yazılmaz.
 - Yayınlanmamış kayıt yalnızca sahibi ve yöneticiler tarafından tanıtım
   adresinde görüntülenebilir.
 - Web, Discord ve banner alanlarında yalnızca `http`/`https` URL'leri kabul

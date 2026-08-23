@@ -28,6 +28,10 @@ en:
       updated_pending: "The changes were saved and sent for administrator approval again."
       reviewed: "Your comment and star rating were saved."
       review_deleted: "Your review was removed."
+      deleted: "The server listing was deleted."
+      claim_submitted: "Your ownership claim was sent for administrator review."
+      claim_approved: "The ownership claim was approved and the listing was transferred."
+      claim_rejected: "The ownership claim was rejected."
     errors:
       submissions_disabled: "Server submissions are currently disabled."
       votes_disabled: "Server voting is currently disabled."
@@ -35,3 +39,7 @@ en:
       reviews_disabled: "Server reviews are currently disabled."
       not_owner: "You are not allowed to edit this server."
       unsafe_endpoint: "The server host or query port is not allowed by the security policy."
+      already_owner: "You already own this server listing."
+      claim_pending: "You already have a pending ownership claim for this server."
+      invalid_claim_decision: "Invalid ownership claim decision."
+      claim_already_reviewed: "This ownership claim has already been reviewed."

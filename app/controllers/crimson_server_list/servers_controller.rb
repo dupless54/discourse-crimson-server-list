@@ -1,13 +1,16 @@
 # frozen_string_literal: true
 
+require "digest"
+
 module ::CrimsonServerList
   class ServersController < ::ApplicationController
     requires_plugin CrimsonServerList::PLUGIN_NAME
 
     before_action :ensure_plugin_enabled
     before_action :ensure_logged_in,
-                  only: %i[create update_owned vote refresh upsert_review destroy_review]
-    before_action :ensure_admin_user, only: %i[update]
+                  only: %i[create update_owned destroy vote refresh request_claim upsert_review destroy_review review_claim]
+    before_action :ensure_staff_user, only: %i[destroy]
+    before_action :ensure_admin_user, only: %i[update review_claim]
 
     def index
       public_scope = CrimsonServerList::Server.publicly_visible
@@ -42,6 +45,13 @@ module ::CrimsonServerList
             .order(created_at: :asc)
             .limit(100)
             .map { |server| serialize_server(server, include_private: true) }
+        payload[:pending_claims] =
+          CrimsonServerList::ClaimRequest
+            .where(status: "pending")
+            .includes(:requester, server: :owner)
+            .order(created_at: :asc)
+            .limit(100)
+            .map { |claim| serialize_claim(claim) }
       end
 
       render json: payload
@@ -55,6 +65,8 @@ module ::CrimsonServerList
       unless (server.approved? && server.enabled?) || can_manage_server?(server)
         raise Discourse::NotFound
       end
+
+      track_public_view(server)
 
       reviews =
         server
@@ -135,6 +147,18 @@ module ::CrimsonServerList
       end
     end
 
+    def destroy
+      server = CrimsonServerList::Server.find(params[:id])
+      Discourse.cache.delete(CrimsonServerList::ProbeService.cache_key(server.id))
+      server.destroy!
+
+      render json: {
+               deleted: true,
+               redirect_url: "/servers",
+               message: I18n.t("crimson_server_list.messages.deleted"),
+             }
+    end
+
     def vote
       unless SiteSetting.crimson_server_list_votes_enabled
         return render_error(I18n.t("crimson_server_list.errors.votes_disabled"), :forbidden)
@@ -178,6 +202,42 @@ module ::CrimsonServerList
 
       enqueue_probe(server, force: true)
       render json: { queued: true, message: "Canlı durum sorgusu kuyruğa alındı." }
+    end
+
+    def request_claim
+      server = CrimsonServerList::Server.publicly_visible.find(params[:id])
+      if server.owner_id == current_user.id
+        return render_error(I18n.t("crimson_server_list.errors.already_owner"), :unprocessable_entity)
+      end
+
+      claim =
+        CrimsonServerList::ClaimRequest.find_or_initialize_by(
+          server_id: server.id,
+          requester_id: current_user.id,
+        )
+
+      if claim.persisted? && claim.status == "pending"
+        return render_error(I18n.t("crimson_server_list.errors.claim_pending"), :unprocessable_entity)
+      end
+
+      claim.assign_attributes(
+        status: "pending",
+        note: params[:note].to_s.strip.first(500).presence,
+        reviewed_by_id: nil,
+        reviewed_at: nil,
+      )
+
+      if claim.save
+        render json: {
+                 claim: serialize_claim(claim.reload),
+                 message: I18n.t("crimson_server_list.messages.claim_submitted"),
+               },
+               status: :created
+      else
+        render_validation_errors(claim)
+      end
+    rescue ActiveRecord::RecordNotUnique
+      render_error(I18n.t("crimson_server_list.errors.claim_pending"), :unprocessable_entity)
     end
 
     def upsert_review
@@ -240,6 +300,53 @@ module ::CrimsonServerList
       end
     end
 
+    def review_claim
+      claim =
+        CrimsonServerList::ClaimRequest
+          .includes(:requester, server: :owner)
+          .find(params[:id])
+      decision = params[:status].to_s
+      unless %w[approved rejected].include?(decision)
+        return render_error(I18n.t("crimson_server_list.errors.invalid_claim_decision"), :unprocessable_entity)
+      end
+
+      CrimsonServerList::ClaimRequest.transaction do
+        claim.lock!
+        unless claim.status == "pending"
+          return render_error(I18n.t("crimson_server_list.errors.claim_already_reviewed"), :unprocessable_entity)
+        end
+
+        if decision == "approved"
+          claim.server.lock!
+          claim.server.update!(owner_id: claim.requester_id)
+          claim.server.claim_requests.where(status: "pending").where.not(id: claim.id).update_all(
+            status: "rejected",
+            reviewed_by_id: current_user.id,
+            reviewed_at: Time.zone.now,
+            updated_at: Time.zone.now,
+          )
+        end
+
+        claim.update!(
+          status: decision,
+          reviewed_by_id: current_user.id,
+          reviewed_at: Time.zone.now,
+        )
+      end
+
+      claim.reload
+      render json: {
+               claim: serialize_claim(claim),
+               server: serialize_server(claim.server.reload, include_private: true),
+               message:
+                 I18n.t(
+                   decision == "approved" ?
+                     "crimson_server_list.messages.claim_approved" :
+                     "crimson_server_list.messages.claim_rejected",
+                 ),
+             }
+    end
+
     private
 
     def ensure_plugin_enabled
@@ -250,15 +357,24 @@ module ::CrimsonServerList
       raise Discourse::InvalidAccess unless current_user&.admin?
     end
 
+    def ensure_staff_user
+      raise Discourse::InvalidAccess unless current_user&.staff?
+    end
+
     def can_manage_server?(server)
       current_user.present? && (current_user.admin? || server.owner_id == current_user.id)
     end
 
     def viewer_payload(server: nil)
       public_server = server.nil? || (server.approved? && server.enabled?)
+      claim =
+        if server.present? && current_user.present?
+          server.claim_requests.find_by(requester_id: current_user.id)
+        end
       {
         logged_in: current_user.present?,
         is_admin: current_user&.admin? || false,
+        is_staff: current_user&.staff? || false,
         can_submit:
           current_user.present? && SiteSetting.crimson_server_list_submission_enabled,
         can_vote:
@@ -266,6 +382,11 @@ module ::CrimsonServerList
         can_review:
           current_user.present? && public_server && SiteSetting.crimson_server_list_reviews_enabled,
         can_edit: server.present? && can_manage_server?(server),
+        can_delete: (server.present? && current_user&.staff?) || false,
+        can_claim:
+          server.present? && current_user.present? && !current_user.admin? && public_server &&
+            server.owner_id != current_user.id && claim&.status != "pending",
+        claim_status: claim&.status,
         live_query_enabled: SiteSetting.crimson_server_list_live_query_enabled,
       }
     end
@@ -355,6 +476,8 @@ module ::CrimsonServerList
         language: server.language,
         version: server.version,
         mode: server.mode,
+        game_details: server.game_details || {},
+        game_detail_rows: serialize_game_details(server),
         status: live_status,
         status_label: I18n.t("crimson_server_list.statuses.#{live_status}"),
         players_online: cache&.fetch(:players_online, nil) || server.players_online,
@@ -369,7 +492,9 @@ module ::CrimsonServerList
         voted_today: voted_today,
         review_count: server.review_count,
         average_rating: server.average_rating,
+        view_count: server.view_count,
         can_edit: can_manage_server?(server),
+        can_delete: current_user&.staff? || false,
         approved: server.approved,
         enabled: server.enabled,
         created_at: server.created_at&.iso8601,
@@ -392,6 +517,24 @@ module ::CrimsonServerList
       payload
     end
 
+    def serialize_game_details(server)
+      values = server.game_details.respond_to?(:with_indifferent_access) ?
+        server.game_details.with_indifferent_access :
+        {}
+
+      CrimsonServerList.game_fields(server.game_slug).filter_map do |field|
+        value = values[field[:key]]
+        next if value.blank?
+
+        {
+          key: field[:key],
+          label: field[:label],
+          value: value,
+          unit: field[:unit],
+        }
+      end
+    end
+
     def serialize_review(review)
       user = review.user
       {
@@ -407,6 +550,31 @@ module ::CrimsonServerList
           name: user.name.presence || user.username,
           avatar_url: user.avatar_template.to_s.gsub("{size}", "96"),
           profile_url: "/u/#{user.username_lower}",
+        },
+      }
+    end
+
+    def serialize_claim(claim)
+      requester = claim.requester
+      server = claim.server
+      {
+        id: claim.id,
+        status: claim.status,
+        note: claim.note,
+        created_at: claim.created_at&.iso8601,
+        requester: {
+          id: requester.id,
+          username: requester.username,
+          name: requester.name.presence || requester.username,
+          avatar_url: requester.avatar_template.to_s.gsub("{size}", "96"),
+          profile_url: "/u/#{requester.username_lower}",
+        },
+        server: {
+          id: server.id,
+          name: server.name,
+          slug: server.slug,
+          detail_url: "/servers/#{server.slug}",
+          current_owner_username: server.owner&.username,
         },
       }
     end
@@ -454,6 +622,7 @@ module ::CrimsonServerList
         :version,
         :mode,
         :monitoring_enabled,
+        game_details: CrimsonServerList::GAME_DETAIL_KEYS,
       )
     end
 
@@ -477,8 +646,29 @@ module ::CrimsonServerList
       server.host = CrimsonServerList::NetworkPolicy.normalize_host(server.host)
       server.country_code = server.country_code.to_s.strip.upcase
       server.query_port = nil if server.query_port.blank?
+      server.game_details = normalize_game_details(server)
       %i[website_url discord_url banner_url language version mode description].each do |attribute|
         server.public_send("#{attribute}=", server.public_send(attribute).to_s.strip.presence)
+      end
+    end
+
+    def normalize_game_details(server)
+      source =
+        if server.game_details.respond_to?(:to_unsafe_h)
+          server.game_details.to_unsafe_h
+        elsif server.game_details.respond_to?(:to_h)
+          server.game_details.to_h
+        else
+          {}
+        end
+
+      allowed = CrimsonServerList.game_fields(server.game_slug).index_by { |field| field[:key] }
+      source.each_with_object({}) do |(key, value), result|
+        field = allowed[key.to_s]
+        next unless field
+
+        normalized = value.to_s.strip.first(100)
+        result[key.to_s] = normalized if normalized.present?
       end
     end
 
@@ -506,6 +696,30 @@ module ::CrimsonServerList
           rating_sum: server.reviews.sum(:rating),
         )
       end
+    end
+
+    def track_public_view(server)
+      return unless server.approved? && server.enabled?
+
+      identity =
+        if current_user.present?
+          "user-#{current_user.id}"
+        else
+          fingerprint = "#{request.remote_ip}|#{request.user_agent.to_s.first(300)}"
+          "guest-#{Digest::SHA256.hexdigest(fingerprint)}"
+        end
+      key = "crimson-server-list:view:#{server.id}:#{Time.zone.today}:#{identity}"
+      return unless Discourse.redis.set(key, "1", nx: true, ex: 36.hours.to_i)
+
+      CrimsonServerList::Server.where(id: server.id).update_all(
+        "view_count = COALESCE(view_count, 0) + 1",
+      )
+      server.view_count = server.view_count.to_i + 1
+    rescue StandardError => error
+      Rails.logger.warn(
+        "[#{CrimsonServerList::PLUGIN_NAME}] view counter failed for server #{server.id}: " \
+          "#{error.class}: #{error.message}",
+      )
     end
 
     def render_validation_errors(record)
