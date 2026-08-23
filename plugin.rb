@@ -2,8 +2,8 @@
 
 # name: discourse-crimson-server-list
 # about: Adds an independent, moderated private game server top list to Discourse.
-# version: 1.0.0
-# authors: TSKEliteForces
+# version: 1.0.1
+# authors: ErespawN
 # url: https://forum.senin.me/servers
 # required_version: 3.3.0
 
@@ -40,6 +40,11 @@ after_initialize do
   require_relative "app/controllers/crimson_server_list/servers_controller"
 
   Discourse::Application.routes.append do
+    # Public Ember pages still need a Rails route for direct visits and hard
+    # refreshes in production. ListController renders the normal Discourse
+    # application shell; the Ember `servers` route takes over in the browser.
+    get "/servers" => "list#latest"
+
     defaults format: :json do
       get "/crimson-server-list" => "crimson_server_list/servers#index"
       post "/crimson-server-list/servers" => "crimson_server_list/servers#create"

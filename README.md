@@ -25,6 +25,8 @@ onaylı private oyun sunucusu top listesi.
 - Yöneticiye özel onay/red kuyruğu
 - Masaüstü, tablet ve telefon için duyarlı Crimson arayüzü
 - Sunucu tarafında harici oyun sunucularına otomatik ağ isteği gönderilmez
+- `/servers` adresine doğrudan giriş ve sayfa yenileme için Rails uygulama
+  kabuğu fallback'i
 
 ## Kurulum
 
