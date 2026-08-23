@@ -1,7 +1,14 @@
 # discourse-crimson-server-list
 
+Sürüm: **2.2.1**
+
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.2.1 düzeltmesi
+
+- Sayfa yenilendiğinde sayaçlarda kalan fakat kart listesinden kaybolan sunucular düzeltildi.
+- Katalog yanıtı URL'de kalmış eski filtrelerden ayrıldı ve dinamik JSON önbelleğe kapatıldı.
 
 ## 2.2.0 özellikleri
 

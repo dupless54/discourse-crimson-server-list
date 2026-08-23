@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Adds an independent, moderated private game server top list to Discourse.
-# version: 2.2.0
+# version: 2.2.1
 # authors: dupless54
 # url: https://forum.senin.me/servers
 # required_version: 3.3.0

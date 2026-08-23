@@ -13,13 +13,18 @@ module ::CrimsonServerList
     before_action :ensure_admin_user, only: %i[update review_claim]
 
     def index
+      # The browser owns the interactive game, tag, search and sort filters.
+      # Always return the same public catalogue here so a stale query string
+      # cannot make the counters report servers while the card collection is
+      # empty. This also lets visitors switch filters without another request.
+      response.headers["Cache-Control"] = "private, no-store"
       public_scope = CrimsonServerList::Server.publicly_visible
       game_counts = public_scope.group(:game_slug).count
       tag_counts = Hash.new(0)
       public_scope.pluck(:tags).each do |server_tags|
         Array(server_tags).each { |tag| tag_counts[tag] += 1 }
       end
-      servers = filtered_scope(public_scope)
+      servers = catalogue_scope(public_scope)
       voted_ids = voted_server_ids(servers)
 
       payload = {
@@ -409,54 +414,13 @@ module ::CrimsonServerList
       }
     end
 
-    def filtered_scope(base_scope)
-      scope = base_scope.includes(:owner)
-
-      game_slug = params[:game].to_s
-      scope = scope.where(game_slug: game_slug) if CrimsonServerList::GAME_SLUGS.include?(game_slug)
-
-      tag = CrimsonServerList.normalize_tag(params[:tag])
-      scope = scope.where("crimson_game_servers.tags @> ?", [tag].to_json) if tag.present?
-
-      query = params[:q].to_s.strip.first(80)
-      if query.present?
-        pattern = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
-        scope =
-          scope.where(
-            "crimson_game_servers.name ILIKE :pattern OR " \
-              "crimson_game_servers.short_description ILIKE :pattern OR " \
-              "crimson_game_servers.tags::text ILIKE :pattern",
-            pattern: pattern,
-          )
-      end
-
-      scope =
-        case params[:sort].to_s
-        when "new"
-          scope.order(created_at: :desc)
-        when "players"
-          scope.order(players_online: :desc, vote_count: :desc, created_at: :desc)
-        when "rating"
-          scope.order(
-            Arel.sql(
-              "CASE WHEN crimson_game_servers.review_count > 0 " \
-                "THEN crimson_game_servers.rating_sum::float / crimson_game_servers.review_count " \
-                "ELSE 0 END DESC",
-            ),
-            review_count: :desc,
-            vote_count: :desc,
-          )
-        when "online"
-          scope.order(
-            Arel.sql("CASE crimson_game_servers.status WHEN 'online' THEN 0 ELSE 1 END"),
-            vote_count: :desc,
-          )
-        else
-          scope.order(featured: :desc, vote_count: :desc, players_online: :desc, created_at: :desc)
-        end
-
+    def catalogue_scope(base_scope)
       maximum = SiteSetting.crimson_server_list_results_limit.to_i.clamp(10, 200)
-      scope.limit(maximum).to_a
+      base_scope
+        .includes(:owner)
+        .order(featured: :desc, vote_count: :desc, players_online: :desc, created_at: :desc)
+        .limit(maximum)
+        .to_a
     end
 
     def voted_server_ids(servers)
