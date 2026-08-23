@@ -1,0 +1,445 @@
+import Component from "@glimmer/component";
+import { fn } from "@ember/helper";
+import { action } from "@ember/object";
+import { on } from "@ember/modifier";
+import { tracked } from "@glimmer/tracking";
+import { ajax } from "discourse/lib/ajax";
+import { eq } from "discourse/truth-helpers";
+
+export default class CrimsonServerDetail extends Component {
+  @tracked server = this.args.model?.server || {};
+  @tracked reviews = this.args.model?.reviews || [];
+  @tracked showEdit = false;
+  @tracked busyAction = "";
+  @tracked announcement = "";
+  @tracked errorMessage = "";
+  @tracked reviewRating = this.mineReview?.rating || 0;
+  @tracked reviewBody = this.mineReview?.body || "";
+
+  get viewer() {
+    return this.args.model?.viewer || {};
+  }
+
+  get games() {
+    return this.args.model?.games || [];
+  }
+
+  get mineReview() {
+    return this.reviews.find((review) => review.mine);
+  }
+
+  get hasReviews() {
+    return this.reviews.length > 0;
+  }
+
+  get canRefresh() {
+    return (
+      this.viewer.can_edit &&
+      this.viewer.live_query_enabled &&
+      this.server.approved &&
+      this.server.enabled &&
+      this.server.monitoring_enabled
+    );
+  }
+
+  get loginPath() {
+    return `/login?return_path=${encodeURIComponent(this.server.detail_url)}`;
+  }
+
+  get starOptions() {
+    const selected = Number(this.reviewRating || 0);
+    return [1, 2, 3, 4, 5].map((value) => ({
+      value,
+      active: value <= selected,
+    }));
+  }
+
+  get scoreLabel() {
+    const average = Number(this.server.average_rating || 0).toFixed(1);
+    return `${average} / 5`;
+  }
+
+  @action
+  toggleEdit() {
+    this.showEdit = !this.showEdit;
+    this.clearMessages();
+  }
+
+  @action
+  setRating(value) {
+    this.reviewRating = value;
+  }
+
+  @action
+  updateReviewBody(event) {
+    this.reviewBody = event.currentTarget.value;
+  }
+
+  @action
+  async copyAddress() {
+    try {
+      await navigator.clipboard.writeText(this.server.address);
+      this.clearMessages();
+      this.announcement = `${this.server.address} kopyalandı.`;
+    } catch {
+      this.errorMessage = "Adres kopyalanamadı; elle seçip kopyalayabilirsin.";
+    }
+  }
+
+  @action
+  async vote() {
+    if (this.server.voted_today || this.busyAction) {
+      return;
+    }
+
+    this.busyAction = "vote";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}/vote.json`,
+        { type: "POST" },
+      );
+      this.server = {
+        ...this.server,
+        vote_count: response.vote_count,
+        voted_today: true,
+      };
+      this.announcement = response.message;
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyAction = "";
+    }
+  }
+
+  @action
+  async refreshStatus() {
+    if (this.busyAction) {
+      return;
+    }
+
+    this.busyAction = "refresh";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}/refresh.json`,
+        { type: "POST" },
+      );
+      this.announcement = response.message;
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyAction = "";
+    }
+  }
+
+  @action
+  async updateServer(event) {
+    event.preventDefault();
+    if (this.busyAction) {
+      return;
+    }
+
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
+    const previousSlug = this.server.slug;
+
+    this.busyAction = "edit";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}.json`,
+        { type: "PUT", data },
+      );
+      this.server = response.server;
+      this.announcement = response.message;
+      this.showEdit = false;
+
+      if (response.server.slug !== previousSlug) {
+        window.location.assign(response.server.detail_url);
+      }
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyAction = "";
+    }
+  }
+
+  @action
+  async saveReview(event) {
+    event.preventDefault();
+    if (this.busyAction) {
+      return;
+    }
+
+    this.busyAction = "review";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}/review.json`,
+        {
+          type: "PUT",
+          data: {
+            rating: this.reviewRating,
+            body: this.reviewBody,
+          },
+        },
+      );
+      this.reviews = [
+        response.review,
+        ...this.reviews.filter((review) => !review.mine),
+      ];
+      this.server = { ...this.server, ...response.rating };
+      this.announcement = response.message;
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyAction = "";
+    }
+  }
+
+  @action
+  async deleteReview() {
+    if (!this.mineReview || this.busyAction) {
+      return;
+    }
+
+    this.busyAction = "review";
+    this.clearMessages();
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}/review.json`,
+        { type: "DELETE" },
+      );
+      this.reviews = this.reviews.filter((review) => !review.mine);
+      this.reviewRating = 0;
+      this.reviewBody = "";
+      this.server = { ...this.server, ...response.rating };
+      this.announcement = response.message;
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyAction = "";
+    }
+  }
+
+  clearMessages() {
+    this.announcement = "";
+    this.errorMessage = "";
+  }
+
+  errorText(error) {
+    return (
+      error?.jqXHR?.responseJSON?.errors?.join(" ") ||
+      error?.responseJSON?.errors?.join(" ") ||
+      "İşlem tamamlanamadı. Lütfen yeniden dene."
+    );
+  }
+
+  <template>
+    <main class="csl-page csl-detail-page">
+      <nav class="csl-detail-back" aria-label="Top listeye dönüş">
+        <a href="/servers">← Tüm sunucular</a>
+      </nav>
+
+      <article class="csl-detail csl-game--{{this.server.game_slug}}">
+        <section class="csl-detail-hero">
+          <div class="csl-detail-hero__visual">
+            {{#if this.server.banner_url}}
+              <img src={{this.server.banner_url}} alt={{this.server.name}} />
+            {{else}}
+              <span aria-hidden="true">{{this.server.game.icon}}</span>
+            {{/if}}
+          </div>
+
+          <div class="csl-detail-hero__shade"></div>
+          <div class="csl-detail-hero__content">
+            <p class="csl-eyebrow">{{this.server.game.icon}} {{this.server.game.name}}</p>
+            <h1>{{this.server.name}}</h1>
+            <p>{{this.server.short_description}}</p>
+
+            <div class="csl-meta">
+              <span class="csl-status csl-status--{{this.server.status}}"><i></i>{{this.server.status_label}}</span>
+              {{#unless this.server.approved}}<span>Onay bekliyor</span>{{/unless}}
+              {{#if this.server.language}}<span>{{this.server.language}}</span>{{/if}}
+              {{#if this.server.version}}<span>{{this.server.version}}</span>{{/if}}
+              {{#if this.server.mode}}<span>{{this.server.mode}}</span>{{/if}}
+            </div>
+          </div>
+        </section>
+
+        <section class="csl-detail-summary">
+          <div class="csl-detail-summary__main">
+            <div class="csl-address csl-address--detail">
+              <code>{{this.server.address}}</code>
+              <button type="button" {{on "click" this.copyAddress}}>Kopyala</button>
+            </div>
+
+            <div class="csl-owner csl-owner--detail">
+              {{#if this.server.owner}}
+                <a
+                  class="trigger-user-card"
+                  data-user-card={{this.server.owner.username}}
+                  href={{this.server.owner.profile_url}}
+                >
+                  {{#if this.server.owner.avatar_url}}<img class="avatar" src={{this.server.owner.avatar_url}} alt="" />{{/if}}
+                  <span><strong>{{this.server.owner.name}}</strong><small>@{{this.server.owner.username}} · liste sahibi</small></span>
+                </a>
+              {{/if}}
+            </div>
+          </div>
+
+          <div class="csl-detail-metrics">
+            <div>
+              {{#if this.server.supports_player_count}}
+                <strong>{{this.server.players_online}}<small>{{#if this.server.players_max}}/{{this.server.players_max}}{{else}}/?{{/if}}</small></strong>
+                <span>canlı oyuncu</span>
+              {{else}}
+                <strong>{{if (eq this.server.status "online") "Açık" "—"}}</strong>
+                <span>port erişimi</span>
+              {{/if}}
+            </div>
+            <div><strong>{{this.server.vote_count}}</strong><span>toplam oy</span></div>
+            <div><strong>{{this.scoreLabel}}</strong><span>{{this.server.review_count}} değerlendirme</span></div>
+          </div>
+
+          <div class="csl-detail-actions">
+            {{#if this.viewer.can_vote}}
+              <button class="csl-vote-button {{if this.server.voted_today "is-voted" ""}}" type="button" disabled={{this.server.voted_today}} {{on "click" this.vote}}>
+                {{if this.server.voted_today "Bugün oylandı" "Oy ver"}}
+              </button>
+            {{else if this.viewer.logged_in}}
+              <span class="csl-vote-button is-disabled">Oylama kapalı</span>
+            {{else}}
+              <a class="csl-vote-button" href={{this.loginPath}}>Oy vermek için giriş yap</a>
+            {{/if}}
+            {{#if this.server.website_url}}<a class="csl-button" href={{this.server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Web sitesi</a>{{/if}}
+            {{#if this.server.discord_url}}<a class="csl-button" href={{this.server.discord_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Discord</a>{{/if}}
+            {{#if this.viewer.can_edit}}
+              <button class="csl-button" type="button" {{on "click" this.toggleEdit}}>{{if this.showEdit "Düzenlemeyi kapat" "Sunucuyu düzenle"}}</button>
+            {{/if}}
+            {{#if this.canRefresh}}
+              <button class="csl-button" type="button" disabled={{eq this.busyAction "refresh"}} {{on "click" this.refreshStatus}}>Canlı durumu yenile</button>
+            {{/if}}
+          </div>
+        </section>
+
+        {{#if this.announcement}}<p class="csl-notice csl-notice--success" role="status">{{this.announcement}}</p>{{/if}}
+        {{#if this.errorMessage}}<p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>{{/if}}
+
+        {{#if this.showEdit}}
+          <section class="csl-panel csl-detail-edit" aria-labelledby="csl-edit-title">
+            <header>
+              <div><p class="csl-eyebrow">LİSTE SAHİBİ</p><h2 id="csl-edit-title">Sunucu bilgilerini düzenle</h2></div>
+              <p>Adres veya sorgu portu değişirse canlı durum sıfırlanır ve güvenli kuyruk sorgusu yeniden çalışır.</p>
+            </header>
+
+            <form class="csl-form" {{on "submit" this.updateServer}}>
+              <label>
+                <span>Oyun</span>
+                <select name="game_slug" required>
+                  {{#each this.games as |game|}}
+                    <option value={{game.slug}} selected={{eq game.slug this.server.game_slug}}>{{game.icon}} {{game.name}}</option>
+                  {{/each}}
+                </select>
+              </label>
+              <label><span>Sunucu adı</span><input name="name" value={{this.server.name}} maxlength="100" required /></label>
+              <label class="csl-form__wide"><span>Kısa açıklama</span><input name="short_description" value={{this.server.short_description}} maxlength="180" required /></label>
+              <label><span>Oyuncu bağlantı adresi</span><input name="host" value={{this.server.host}} maxlength="255" required /></label>
+              <label><span>Oyuncu bağlantı portu</span><input name="port" value={{this.server.port}} type="number" min="1" max="65535" required /></label>
+              <label>
+                <span>Sorgu portu (isteğe bağlı)</span>
+                <input name="query_port" value={{this.server.query_port}} type="number" min="1" max="65535" placeholder="Boşsa bağlantı portu" />
+              </label>
+              <label><span>Dil</span><input name="language" value={{this.server.language}} maxlength="60" /></label>
+              <label><span>Ülke kodu</span><input name="country_code" value={{this.server.country_code}} maxlength="2" /></label>
+              <label><span>Sürüm</span><input name="version" value={{this.server.version}} maxlength="60" /></label>
+              <label><span>Oyun modu</span><input name="mode" value={{this.server.mode}} maxlength="60" /></label>
+              <label class="csl-form__wide"><span>Web sitesi</span><input name="website_url" value={{this.server.website_url}} type="url" /></label>
+              <label class="csl-form__wide"><span>Discord daveti</span><input name="discord_url" value={{this.server.discord_url}} type="url" /></label>
+              <label class="csl-form__wide"><span>Hareketli reklam bannerı (GIF/WebP destekli)</span><input name="banner_url" value={{this.server.banner_url}} type="url" /></label>
+              <label class="csl-form__wide"><span>Detaylı açıklama</span><textarea name="description" value={{this.server.description}} maxlength="4000" rows="7"></textarea></label>
+              <label class="csl-check csl-form__wide"><input name="monitoring_enabled" type="checkbox" checked={{this.server.monitoring_enabled}} /><span>Güvenli canlı durum sorgusunu etkin tut</span></label>
+              <div class="csl-form__actions csl-form__wide">
+                <button class="csl-button" type="button" {{on "click" this.toggleEdit}}>Vazgeç</button>
+                <button class="csl-button csl-button--primary" type="submit" disabled={{eq this.busyAction "edit"}}>Değişiklikleri kaydet</button>
+              </div>
+            </form>
+          </section>
+        {{/if}}
+
+        <div class="csl-detail-grid">
+          <section class="csl-panel csl-about">
+            <header><div><p class="csl-eyebrow">SUNUCU TANITIMI</p><h2>Bu sunucu hakkında</h2></div></header>
+            {{#if this.server.description}}
+              <p>{{this.server.description}}</p>
+            {{else}}
+              <p class="csl-muted-copy">Sunucu sahibi henüz ayrıntılı bir tanıtım eklememiş.</p>
+            {{/if}}
+
+            <dl class="csl-technical">
+              <div><dt>Sorgu adaptörü</dt><dd>{{this.server.query_adapter}}</dd></div>
+              <div><dt>Sorgu portu</dt><dd>{{if this.server.query_port this.server.query_port this.server.port}}</dd></div>
+              <div><dt>Son kontrol</dt><dd>{{if this.server.last_checked_at this.server.last_checked_at "Henüz çalışmadı"}}</dd></div>
+              <div><dt>Yanıt süresi</dt><dd>{{#if this.server.last_response_ms}}{{this.server.last_response_ms}} ms{{else}}—{{/if}}</dd></div>
+              {{#if this.server.last_query_error}}<div class="csl-technical__wide"><dt>Son sorgu notu</dt><dd>{{this.server.last_query_error}}</dd></div>{{/if}}
+            </dl>
+          </section>
+
+          <section class="csl-panel csl-review-composer" aria-labelledby="csl-review-title">
+            <header><div><p class="csl-eyebrow">TOPLULUK PUANI</p><h2 id="csl-review-title">Yorum ve değerlendirme</h2></div></header>
+            {{#if this.viewer.can_review}}
+              <form {{on "submit" this.saveReview}}>
+                <div class="csl-star-picker" role="group" aria-label="Yıldız puanı">
+                  {{#each this.starOptions as |star|}}
+                    <button class={{if star.active "is-active" ""}} type="button" aria-label="{{star.value}} yıldız" aria-pressed={{star.active}} {{on "click" (fn this.setRating star.value)}}>★</button>
+                  {{/each}}
+                </div>
+                <textarea maxlength="2000" rows="5" value={{this.reviewBody}} placeholder="Sunucudaki deneyimini toplulukla paylaş…" {{on "input" this.updateReviewBody}}></textarea>
+                <div class="csl-review-composer__actions">
+                  {{#if this.mineReview}}<button class="csl-button" type="button" disabled={{eq this.busyAction "review"}} {{on "click" this.deleteReview}}>Değerlendirmemi sil</button>{{/if}}
+                  <button class="csl-button csl-button--primary" type="submit" disabled={{eq this.busyAction "review"}}>{{if this.mineReview "Değerlendirmeyi güncelle" "Değerlendirmeyi yayınla"}}</button>
+                </div>
+              </form>
+            {{else if this.viewer.logged_in}}
+              <p class="csl-muted-copy">Değerlendirmeler şu anda kapalı.</p>
+            {{else}}
+              <a class="csl-button csl-button--primary" href={{this.loginPath}}>Yorum yapmak için giriş yap</a>
+            {{/if}}
+          </section>
+        </div>
+
+        <section class="csl-panel csl-reviews" aria-labelledby="csl-reviews-title">
+          <header>
+            <div><p class="csl-eyebrow">{{this.server.review_count}} DEĞERLENDİRME</p><h2 id="csl-reviews-title">Forum üyelerinin görüşleri</h2></div>
+            <strong class="csl-rating-badge">★ {{this.scoreLabel}}</strong>
+          </header>
+
+          {{#if this.hasReviews}}
+            <div class="csl-review-list">
+              {{#each this.reviews as |review|}}
+                <article class="csl-review">
+                  <a class="csl-review__user trigger-user-card" data-user-card={{review.user.username}} href={{review.user.profile_url}}>
+                    <img class="avatar" src={{review.user.avatar_url}} alt="" loading="lazy" />
+                    <span><strong>{{review.user.name}}</strong><small>@{{review.user.username}}</small></span>
+                  </a>
+                  <div class="csl-review__rating" aria-label="{{review.rating}} yıldız">★ {{review.rating}}/5</div>
+                  <p>{{review.body}}</p>
+                  {{#if review.mine}}<span class="csl-review__mine">Senin değerlendirmen</span>{{/if}}
+                </article>
+              {{/each}}
+            </div>
+          {{else}}
+            <div class="csl-empty csl-empty--compact"><p>Henüz değerlendirme yok. İlk deneyimi sen paylaşabilirsin.</p></div>
+          {{/if}}
+        </section>
+      </article>
+    </main>
+  </template>
+}

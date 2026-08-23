@@ -14,3 +14,30 @@ plugins:
     default: 100
     min: 10
     max: 200
+  crimson_server_list_live_query_enabled:
+    default: true
+  crimson_server_list_query_interval_minutes:
+    default: 2
+    min: 1
+    max: 60
+  crimson_server_list_connect_timeout_ms:
+    default: 1800
+    min: 500
+    max: 5000
+  crimson_server_list_read_timeout_ms:
+    default: 2200
+    min: 500
+    max: 5000
+  crimson_server_list_extra_allowed_ports:
+    default: ""
+  crimson_server_list_allowed_host_suffixes:
+    default: ""
+  crimson_server_list_reviews_enabled:
+    default: true
+    client: true
+  crimson_server_list_owner_edits_require_approval:
+    default: false
+  crimson_server_list_reviews_limit:
+    default: 100
+    min: 10
+    max: 200

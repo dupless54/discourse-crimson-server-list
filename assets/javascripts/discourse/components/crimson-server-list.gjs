@@ -21,6 +21,7 @@ export default class CrimsonServerList extends Component {
   @tracked busyServerId = null;
   @tracked announcement = "";
   @tracked errorMessage = "";
+  @tracked submittedServer = null;
 
   get viewer() {
     return this.args.model?.viewer || {};
@@ -54,6 +55,14 @@ export default class CrimsonServerList extends Component {
       if (this.sortMode === "players") {
         return (
           right.players_online - left.players_online ||
+          right.vote_count - left.vote_count
+        );
+      }
+
+      if (this.sortMode === "rating") {
+        return (
+          right.average_rating - left.average_rating ||
+          right.review_count - left.review_count ||
           right.vote_count - left.vote_count
         );
       }
@@ -109,6 +118,7 @@ export default class CrimsonServerList extends Component {
     event.preventDefault();
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
+    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
 
     this.isSubmitting = true;
     this.clearMessages();
@@ -120,6 +130,7 @@ export default class CrimsonServerList extends Component {
       });
 
       this.announcement = response.message;
+      this.submittedServer = response.server;
       form.reset();
 
       if (!response.pending) {
@@ -226,6 +237,7 @@ export default class CrimsonServerList extends Component {
   clearMessages() {
     this.announcement = "";
     this.errorMessage = "";
+    this.submittedServer = null;
   }
 
   publishServer(server) {
@@ -295,7 +307,10 @@ export default class CrimsonServerList extends Component {
       </section>
 
       {{#if this.announcement}}
-        <p class="csl-notice csl-notice--success" role="status">{{this.announcement}}</p>
+        <p class="csl-notice csl-notice--success" role="status">
+          {{this.announcement}}
+          {{#if this.submittedServer}}<a href={{this.submittedServer.detail_url}}>Başvuruyu aç →</a>{{/if}}
+        </p>
       {{/if}}
       {{#if this.errorMessage}}
         <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
@@ -337,6 +352,10 @@ export default class CrimsonServerList extends Component {
               <input name="port" type="number" min="1" max="65535" required placeholder="25565" />
             </label>
             <label>
+              <span>Sorgu portu (isteğe bağlı)</span>
+              <input name="query_port" type="number" min="1" max="65535" placeholder="Boşsa bağlantı portu" />
+            </label>
+            <label>
               <span>Dil</span>
               <input name="language" maxlength="60" placeholder="Türkçe" />
             </label>
@@ -361,12 +380,16 @@ export default class CrimsonServerList extends Component {
               <input name="discord_url" type="url" placeholder="https://discord.gg/…" />
             </label>
             <label class="csl-form__wide">
-              <span>Banner görseli</span>
-              <input name="banner_url" type="url" placeholder="https://…/banner.webp" />
+              <span>Hareketli reklam bannerı</span>
+              <input name="banner_url" type="url" placeholder="https://…/banner.gif veya banner.webp" />
             </label>
             <label class="csl-form__wide">
               <span>Detaylı açıklama</span>
               <textarea name="description" maxlength="4000" rows="4" placeholder="Özellikler, kurallar ve topluluk hakkında bilgi"></textarea>
+            </label>
+            <label class="csl-check csl-form__wide">
+              <input name="monitoring_enabled" type="checkbox" checked />
+              <span>Güvenli canlı durum ve oyuncu sorgusunu etkinleştir</span>
             </label>
             <div class="csl-form__actions csl-form__wide">
               <button class="csl-button" type="button" {{on "click" this.toggleSubmit}}>Vazgeç</button>
@@ -434,6 +457,7 @@ export default class CrimsonServerList extends Component {
               <option value="top">En yüksek oy</option>
               <option value="online">Çevrimiçi</option>
               <option value="players">Oyuncu sayısı</option>
+              <option value="rating">En iyi değerlendirme</option>
               <option value="new">En yeni</option>
             </select>
           </label>
@@ -447,19 +471,19 @@ export default class CrimsonServerList extends Component {
               <span>#</span>{{server.rank}}
             </div>
 
-            <div class="csl-server-card__visual">
+            <a class="csl-server-card__visual" href={{server.detail_url}} aria-label="{{server.name}} tanıtımını aç">
               {{#if server.banner_url}}
                 <img src={{server.banner_url}} alt="" loading="lazy" />
               {{else}}
                 <div class="csl-server-card__fallback" aria-hidden="true">{{server.game.icon}}</div>
               {{/if}}
               <span class="csl-game-label">{{server.game.icon}} {{server.game.name}}</span>
-            </div>
+            </a>
 
             <div class="csl-server-card__body">
               <header>
                 <div>
-                  <h2>{{server.name}}</h2>
+                  <h2><a href={{server.detail_url}}>{{server.name}}</a></h2>
                   <p>{{server.short_description}}</p>
                 </div>
                 {{#if server.featured}}<span class="csl-featured">ÖNE ÇIKAN</span>{{/if}}
@@ -477,38 +501,39 @@ export default class CrimsonServerList extends Component {
                 <button type="button" {{on "click" (fn this.copyAddress server)}} aria-label="Sunucu adresini kopyala">Kopyala</button>
               </div>
 
-              {{#if server.description}}
-                <details class="csl-description">
-                  <summary>Sunucu ayrıntıları</summary>
-                  <p>{{server.description}}</p>
-                </details>
-              {{/if}}
+              <a class="csl-description-link" href={{server.detail_url}}>Tanıtımı, yorumları ve puanları aç →</a>
 
               <footer>
-                <div class="csl-owner">
-                  {{#if server.owner.avatar_url}}<img src={{server.owner.avatar_url}} alt="" loading="lazy" />{{/if}}
-                  <span>@{{server.owner.username}} tarafından eklendi</span>
-                </div>
+                {{#if server.owner}}
+                  <a class="csl-owner trigger-user-card" data-user-card={{server.owner.username}} href={{server.owner.profile_url}}>
+                    {{#if server.owner.avatar_url}}<img class="avatar" src={{server.owner.avatar_url}} alt="" loading="lazy" />{{/if}}
+                    <span>@{{server.owner.username}} tarafından eklendi</span>
+                  </a>
+                {{/if}}
                 <nav aria-label="Sunucu bağlantıları">
-                  {{#if server.website_url}}<a href={{server.website_url}} target="_blank" rel="noopener noreferrer">Web</a>{{/if}}
-                  {{#if server.discord_url}}<a href={{server.discord_url}} target="_blank" rel="noopener noreferrer">Discord</a>{{/if}}
+                  {{#if server.website_url}}<a href={{server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Web</a>{{/if}}
+                  {{#if server.discord_url}}<a href={{server.discord_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Discord</a>{{/if}}
                 </nav>
               </footer>
             </div>
 
             <aside class="csl-server-card__score">
               <div class="csl-players">
-                {{#if server.players_max}}
+                {{#if server.supports_player_count}}
                   <strong>{{server.players_online}}</strong>
-                  <span>/ {{server.players_max}} oyuncu</span>
+                  <span>{{#if server.players_max}}/ {{server.players_max}} oyuncu{{else}}canlı oyuncu{{/if}}</span>
                 {{else}}
-                  <strong>—</strong>
-                  <span>oyuncu bilgisi yok</span>
+                  <strong>{{if (eq server.status "online") "Açık" "—"}}</strong>
+                  <span>port erişimi</span>
                 {{/if}}
               </div>
               <div class="csl-votes">
                 <strong>{{server.vote_count}}</strong>
                 <span>oy</span>
+              </div>
+              <div class="csl-rating">
+                <strong>★ {{server.average_rating}}</strong>
+                <span>{{server.review_count}} değerlendirme</span>
               </div>
               {{#if this.viewer.can_vote}}
                 <button class="csl-vote-button {{if server.voted_today "is-voted" ""}}" type="button" disabled={{server.voted_today}} aria-pressed={{server.voted_today}} {{on "click" (fn this.vote server)}}>
@@ -531,8 +556,8 @@ export default class CrimsonServerList extends Component {
       </section>
 
       <p class="csl-footnote">
-        Çevrimiçi durumu ve oyuncu sayıları bu ilk sürümde yönetici tarafından
-        doğrulanır; sunuculara otomatik ağ isteği gönderilmez.
+        Canlı durum sorguları sayfa isteklerinden bağımsız Sidekiq işleriyle,
+        yalnızca izin verilen genel internet adresi ve portlara uygulanır.
       </p>
     </main>
   </template>
