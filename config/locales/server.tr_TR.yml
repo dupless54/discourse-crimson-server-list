@@ -1,6 +1,6 @@
-tr:
+tr_TR:
   site_settings:
-    crimson_server_list_enabled: "Bağımsız private server top listesini etkinleştir."
+    crimson_server_list_enabled: "Bağımsız özel oyun sunucusu sıralamasını etkinleştir."
     crimson_server_list_submission_enabled: "Oturum açmış üyelerin sunucu başvurusu göndermesine izin ver."
     crimson_server_list_require_approval: "Yeni sunucu başvurularını yayınlamadan önce yönetici onayına gönder."
     crimson_server_list_votes_enabled: "Üyelerin her sunucuya günde bir kez oy vermesine izin ver."
@@ -23,7 +23,7 @@ tr:
     messages:
       submitted: "Sunucun yönetici onayına gönderildi."
       published: "Sunucu yayınlandı."
-      voted: "Oyun kaydedildi. Yarın yeniden oy verebilirsin."
+      voted: "Oyunuz kaydedildi. Yarın yeniden oy verebilirsiniz."
       updated: "Sunucu bilgileri güncellendi."
       updated_pending: "Değişiklikler kaydedildi ve yeniden yönetici onayına gönderildi."
       reviewed: "Yorumun ve yıldız değerlendirmen kaydedildi."

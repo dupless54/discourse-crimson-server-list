@@ -468,7 +468,7 @@ export default class CrimsonServerList extends Component {
       <section class="csl-hero" aria-labelledby="csl-title">
         <div class="csl-hero__copy">
           <p class="csl-eyebrow">SENİN.ME OYUN TOPLULUĞU</p>
-          <h1 id="csl-title">Private Server Top Listesi</h1>
+          <h1 id="csl-title">Özel Oyun Sunucuları</h1>
           <p>
             Topluluğun önerdiği özel oyun sunucularını keşfet, filtrele ve her
             gün favorine oy ver.

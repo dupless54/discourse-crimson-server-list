@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 # name: discourse-crimson-server-list
-# about: Adds an independent, moderated private game server top list to Discourse.
-# version: 2.2.1
+# about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
+# version: 2.2.2
 # authors: dupless54
-# url: https://forum.senin.me/servers
+# url: https://senin.me/servers
 # required_version: 3.3.0
 
 require "set"

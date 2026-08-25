@@ -7,7 +7,7 @@ export default class ServersRoute extends DiscourseRoute {
   }
 
   titleToken() {
-    return "Private Server Top Listesi";
+    return "Özel Oyun Sunucuları";
   }
 
   activate() {
