@@ -11,6 +11,9 @@ Current source/tests > `docs/ai/CURRENT_STATE.md` > nearest local `AGENTS.md` > 
 - migrations/schema -> `db/AGENTS.md`
 Use a three-file `docs/ai/work/<feature>/` packet only for genuine multi-session work.
 
+## Fast task path
+For non-trivial work, use `.agents/skills/task-packet/SKILL.md` before broad reads. Use `docs/ai/REPO_MAP.md` to locate code, `COMMANDS.md` only for validation, and `DECISIONS.md` only for network/ownership/architecture choices. Skip the formal packet for trivial one-file edits.
+
 ## Security and product invariants
 This plugin owns moderated game-server listings, votes, reviews, ownership/claim transfer, live probe state, and public ranking/detail UI.
 
@@ -33,4 +36,4 @@ Use current Discourse APIs verified from source, smallest maintainable diffs, bo
 
 Stop for unresolved network policy, ownership/moderation, schema, security, or product ambiguity. Preserve unrelated work and `.claude/settings.local.json`; no force-push/reset/clean/branch deletion/deploy/destructive DB. Remote writes only when current task explicitly authorizes them. Prefer exact symbols/logs/diffs over broad scans.
 
-Skills live under `.agents/skills/` and load on demand.
+Skills live under `.agents/skills/` and load on demand; use `task-packet` for non-trivial work.
