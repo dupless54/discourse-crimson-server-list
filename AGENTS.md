@@ -7,9 +7,10 @@ Current source/tests > `docs/ai/CURRENT_STATE.md` > nearest local `AGENTS.md` > 
 - models/controllers/ownership/reviews/claims -> `app/AGENTS.md`
 - probe jobs -> `app/jobs/AGENTS.md`
 - network policy/adapters/probe service -> `lib/AGENTS.md`
-- frontend routes/components -> `assets/javascripts/AGENTS.md`
+- frontend routes/components -> `assets/AGENTS.md`
 - migrations/schema -> `db/AGENTS.md`
 Use a three-file `docs/ai/work/<feature>/` packet only for genuine multi-session work.
+AI context files must stay out of runtime-compiled directories such as `assets/javascripts/`; keep frontend-scoped context at `assets/`.
 
 ## Fast task path
 For non-trivial work, use `.agents/skills/task-packet/SKILL.md` before broad reads. Use `docs/ai/REPO_MAP.md` to locate code, `COMMANDS.md` only for validation, and `DECISIONS.md` only for network/ownership/architecture choices. Skip the formal packet for trivial one-file edits.
