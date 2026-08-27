@@ -7,7 +7,7 @@ Current source/tests > `docs/ai/CURRENT_STATE.md` > nearest local `AGENTS.md` > 
 - models/controllers/ownership/reviews/claims -> `app/AGENTS.md`
 - probe jobs -> `app/jobs/AGENTS.md`
 - network policy/adapters/probe service -> `lib/AGENTS.md`
-- frontend routes/components -> `assets/javascripts/discourse/AGENTS.md`
+- frontend routes/components -> `assets/javascripts/AGENTS.md`
 - migrations/schema -> `db/AGENTS.md`
 Use a three-file `docs/ai/work/<feature>/` packet only for genuine multi-session work.
 
