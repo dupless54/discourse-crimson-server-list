@@ -19,6 +19,7 @@ en:
     crimson_server_list_reports_enabled: "Allow signed-in members to report published server listings for administrator review."
     crimson_server_list_uptime_history_enabled: "Record and expose bounded uptime history for published monitored servers."
     crimson_server_list_uptime_history_retention_days: "How many days of 10-minute uptime samples to retain (7–90)."
+    crimson_server_list_follows_enabled: "Allow signed-in members to save published servers to a private favorites/follow list."
   crimson_server_list:
     statuses:
       unknown: "Unverified"
@@ -42,6 +43,9 @@ en:
       report_submitted: "Your report was sent to the administrators for review."
       report_resolved: "The server report was marked as resolved."
       report_dismissed: "The server report was dismissed."
+      followed: "The server was added to your favorites."
+      follow_updated: "Your server follow preferences were updated."
+      unfollowed: "The server was removed from your favorites."
     errors:
       submissions_disabled: "Server submissions are currently disabled."
       submission_rate_limited: "You have submitted too many servers recently. Please try again later."
@@ -72,3 +76,6 @@ en:
       report_rate_limited: "A report was submitted too recently. Please wait before trying again."
       invalid_report_decision: "Invalid server report decision."
       report_already_reviewed: "This server report has already been reviewed."
+      follows_disabled: "Server favorites are currently disabled."
+      follow_limit_reached: "You have reached the maximum number of saved servers. Remove a favorite before adding another."
+      follow_rate_limited: "You have changed server favorites too frequently. Please try again later."

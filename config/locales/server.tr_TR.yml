@@ -19,6 +19,7 @@ tr_TR:
     crimson_server_list_reports_enabled: "Oturum açmış üyelerin yayındaki sunucu ilanlarını yönetici incelemesi için raporlamasına izin ver."
     crimson_server_list_uptime_history_enabled: "Yayınlanan ve izlenen sunucular için sınırlı çalışma süresi geçmişini kaydet ve göster."
     crimson_server_list_uptime_history_retention_days: "10 dakikalık çalışma süresi örneklerinin kaç gün saklanacağını belirler (7–90)."
+    crimson_server_list_follows_enabled: "Oturum açmış üyelerin yayındaki sunucuları özel favori/takip listesine kaydetmesine izin ver."
   crimson_server_list:
     statuses:
       unknown: "Doğrulanmadı"
@@ -42,6 +43,9 @@ tr_TR:
       report_submitted: "Raporun yönetici incelemesine gönderildi."
       report_resolved: "Sunucu raporu çözüldü olarak işaretlendi."
       report_dismissed: "Sunucu raporu reddedildi."
+      followed: "Sunucu favorilerine eklendi."
+      follow_updated: "Sunucu takip tercihlerin güncellendi."
+      unfollowed: "Sunucu favorilerinden kaldırıldı."
     errors:
       submissions_disabled: "Sunucu başvuruları şu anda kapalı."
       submission_rate_limited: "Kısa sürede çok fazla sunucu başvurusu gönderdin. Daha sonra yeniden dene."
@@ -72,3 +76,6 @@ tr_TR:
       report_rate_limited: "Kısa süre önce bir rapor gönderdin. Yeniden denemeden önce biraz bekle."
       invalid_report_decision: "Geçersiz sunucu raporu kararı."
       report_already_reviewed: "Bu sunucu raporu daha önce sonuçlandırılmış."
+      follows_disabled: "Sunucu favorileri şu anda kapalı."
+      follow_limit_reached: "Kaydedilebilecek en fazla sunucu sayısına ulaştın. Yeni bir favori eklemeden önce mevcut favorilerinden birini kaldır."
+      follow_rate_limited: "Sunucu favorilerini kısa sürede çok sık değiştirdin. Daha sonra yeniden dene."

@@ -58,3 +58,6 @@ plugins:
     default: 30
     min: 7
     max: 90
+  crimson_server_list_follows_enabled:
+    default: true
+    client: true
