@@ -85,9 +85,8 @@ module ::CrimsonServerList
         CrimsonServerList::Server
           .includes(:owner)
           .find_by!(slug: params[:slug])
-      unless (server.approved? && server.enabled?) || can_manage_server?(server)
-        raise Discourse::NotFound
-      end
+      publicly_visible = server.approved? && server.enabled?
+      raise Discourse::NotFound unless publicly_visible || can_manage_server?(server)
 
       track_public_view(server)
 
@@ -329,7 +328,7 @@ module ::CrimsonServerList
           .includes(:requester, server: :owner)
           .find(params[:id])
       decision = params[:status].to_s
-      unless %w[approved rejected].include?(decision)
+      if %w[approved rejected].exclude?(decision)
         return render_error(I18n.t("crimson_server_list.errors.invalid_claim_decision"), :unprocessable_entity)
       end
 
