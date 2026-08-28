@@ -1,9 +1,19 @@
 # discourse-crimson-server-list
 
-Sürüm: **2.5.0**
+Sürüm: **2.6.0**
 
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.6.0 favorites / follow backend
+
+- Oturum açmış üyeler yayındaki sunucuları kendi özel favori listelerine kaydedebilir.
+- Her kullanıcı ve sunucu çifti için yalnızca tek follow kaydı tutulur; tekrar kaydetme duplicate satır üretmez.
+- Aynı ilişkideki `notifications_enabled` tercihi gelecekteki bildirim aboneliği için saklanır; bu sürüm bildirim göndermeye başlamaz.
+- Kullanıcı başına en fazla 500 aktif favori tutulur ve başarılı state değişiklikleri saatte 120 işlem ile sınırlandırılır.
+- Favori listesi yalnız ilgili kullanıcıya açıktır; başka kullanıcıların favori/takip bilgileri ve toplamları public serializer'a eklenmez.
+- Yayından kaldırılan veya devre dışı bırakılan sunucular private favori listesinde gösterilmez; kullanıcı bu kayıtları yine unfollow ederek temizleyebilir.
+- Sunucu veya kullanıcı silindiğinde foreign key `ON DELETE CASCADE` ile ilişki kaydı da temizlenir.
 
 ## 2.5.0 uptime history backend
 
@@ -142,7 +152,7 @@ bilinçli biçimde eklenmelidir.
 
 1. Bu dizini mevcut eklenti Git deposunun köküne yükleyin.
 2. `/var/discourse` altında `./launcher rebuild app` çalıştırın. Yeni migration,
-   etiket, canlı durum, değerlendirme ve bounded uptime history tablosunu otomatik oluşturur.
+   etiket, canlı durum, değerlendirme, bounded uptime history ve favori/takip tablosunu otomatik oluşturur.
 3. Yönetim panelinde **Eklentiler → Crimson server list** ayarlarını gözden
    geçirin.
 4. `/servers` adresini açın.
@@ -158,10 +168,12 @@ kayıtları korunur.
 - Sahiplik talepleri: `crimson_server_claim_requests`
 - Sunucu raporları: `crimson_server_reports`
 - Uptime history: `crimson_server_uptime_samples`
+- Favoriler / takip tercihleri: `crimson_server_follows`
 - Sunucu etiketleri: `crimson_game_servers.tags` JSONB alanı ve GIN indeksi
-- Başvuru, oy, yorum, elle yenileme ve sahip düzenlemesi oturum gerektirir.
+- Başvuru, oy, yorum, elle yenileme, sahip düzenlemesi ve favori/takip işlemleri oturum gerektirir.
 - Bir kullanıcı aynı sunucuya yalnızca bir değerlendirme bırakabilir; yeniden
   gönderdiğinde mevcut değerlendirmesi güncellenir.
+- Bir kullanıcı ve sunucu çifti için yalnız tek favori/takip ilişkisi bulunur; notification tercihi aynı satırda tutulur.
 - Sunucu sahibi yalnızca kendi kaydını düzenleyebilir; kendi ilanına oy veremez
   veya değerlendirme bırakamaz; yönetici bütün kayıtları yönetebilir.
 - Yönetici ve moderatörler ilan silebilir; sahiplik aktarımını yalnızca yönetici
@@ -197,3 +209,4 @@ kayıtları korunur.
 - `crimson_server_list_reports_enabled`
 - `crimson_server_list_uptime_history_enabled`
 - `crimson_server_list_uptime_history_retention_days`
+- `crimson_server_list_follows_enabled`
