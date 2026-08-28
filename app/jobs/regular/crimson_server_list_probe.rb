@@ -27,16 +27,26 @@ module ::Jobs
       if result.players_max.positive?
         result.players_online = [result.players_online, result.players_max].min
       end
+      checked_at = Time.zone.now
       attributes = {
         status: result.status,
         players_online: result.players_online.to_i,
         players_max: result.players_max.to_i,
         last_query_error: nil,
         last_response_ms: elapsed_ms,
-        last_checked_at: Time.zone.now,
+        last_checked_at: checked_at,
       }
       attributes[:version] = result.version.to_s.first(60) if result.version.present? && server.version.blank?
       server.update_columns(attributes)
+      safe_record_history(
+        server,
+        status: result.status,
+        checked_at: checked_at,
+        response_ms: elapsed_ms,
+        players_online: result.players_online,
+        players_max: result.players_max,
+        supports_player_count: result.supports_player_count,
+      )
       server.reload
       ::CrimsonServerList::ProbeService.write_cache(server, result, elapsed_ms)
     rescue ::CrimsonServerList::NetworkPolicy::Error => error
@@ -56,15 +66,26 @@ module ::Jobs
     def record_failure(server, status, message)
       return unless server&.persisted?
 
+      checked_at = Time.zone.now
       server.update_columns(
         status: status,
         players_online: 0,
         players_max: 0,
         last_query_error: message.to_s.first(500),
         last_response_ms: nil,
-        last_checked_at: Time.zone.now,
+        last_checked_at: checked_at,
       )
+      safe_record_history(server, status: status, checked_at: checked_at)
       Discourse.cache.delete(::CrimsonServerList::ProbeService.cache_key(server.id))
+    end
+
+    def safe_record_history(server, **attributes)
+      ::CrimsonServerList::UptimeHistory.record!(server: server, **attributes)
+    rescue StandardError => error
+      Rails.logger.warn(
+        "[CrimsonServerList] uptime sample failed for server #{server.id}: " \
+          "#{error.class}: #{error.message}",
+      )
     end
   end
 end
