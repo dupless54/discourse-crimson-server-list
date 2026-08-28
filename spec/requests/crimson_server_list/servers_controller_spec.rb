@@ -102,12 +102,13 @@ RSpec.describe CrimsonServerList::ServersController do
       sign_in(member)
       limiter = instance_double(RateLimiter)
       allow(limiter).to receive(:performed!).with(raise_error: false).and_return(true)
-      expect(limiter).to receive(:rollback!).once
+      allow(limiter).to receive(:rollback!)
       allow(RateLimiter).to receive(:new).and_return(limiter)
 
       post "/crimson-server-list/servers.json", params: server_attributes(name: "")
 
       expect_status(422)
+      expect(limiter).to have_received(:rollback!).once
     end
   end
 
