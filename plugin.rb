@@ -7,8 +7,6 @@
 # url: https://senin.me/servers
 # required_version: 3.3.0
 
-require "set"
-
 enabled_site_setting :crimson_server_list_enabled
 
 register_asset "stylesheets/crimson-server-list.scss"

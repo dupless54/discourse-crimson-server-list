@@ -14,6 +14,18 @@ Use a three-file `docs/ai/work/<feature>/` packet only for genuine multi-session
 ## Fast task path
 For non-trivial work, use `.agents/skills/task-packet/SKILL.md` before broad reads. Use `docs/ai/REPO_MAP.md` to locate code, `COMMANDS.md` only for validation, and `DECISIONS.md` only for network/ownership/architecture choices. Skip the formal packet for trivial one-file edits.
 
+## Review and merge policy
+AI reviewers are advisory, not merge gates. Do not wait for approval from Claude, Gemini, ChatGPT/Codex, or any other model unless the user explicitly makes that approval mandatory for the current task.
+
+For normal pull requests, merge eligibility is determined by the latest exact PR head SHA:
+- the official `Discourse Plugin` CI workflow must exist, run, and be GREEN;
+- if the repository exposes another required Discourse-owned check named `Discourse CI`, it must also be GREEN;
+- stale checks from an older head SHA never count;
+- `NO_CI`, skipped, missing, or not-run checks are not GREEN;
+- exact changed paths/scope must still match the authorized task.
+
+A GREEN CI state does not itself authorize a remote merge. Merge only when the user has explicitly authorized merging, including conditional authorization such as “merge when Discourse CI is green.”
+
 ## Security and product invariants
 This plugin owns moderated game-server listings, votes, reviews, ownership/claim transfer, live probe state, and public ranking/detail UI.
 

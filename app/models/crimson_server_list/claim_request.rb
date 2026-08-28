@@ -17,3 +17,24 @@ module ::CrimsonServerList
     validates :note, length: { maximum: 500 }, allow_blank: true
   end
 end
+
+# == Schema Information
+#
+# Table name: crimson_server_claim_requests
+#
+#  id             :bigint           not null, primary key
+#  note           :text
+#  reviewed_at    :datetime
+#  status         :string(20)       default("pending"), not null
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  requester_id   :integer          not null
+#  reviewed_by_id :integer
+#  server_id      :integer          not null
+#
+# Indexes
+#
+#  idx_crimson_server_claim_per_user                            (server_id,requester_id) UNIQUE
+#  index_crimson_server_claim_requests_on_requester_id          (requester_id)
+#  index_crimson_server_claim_requests_on_server_id_and_status  (server_id,status)
+#
