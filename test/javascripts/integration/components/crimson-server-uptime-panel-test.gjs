@@ -12,7 +12,14 @@ module("Integration | Component | crimson-server-uptime-panel", function (hooks)
     this.previousUptimeEnabled =
       this.siteSettings.crimson_server_list_uptime_history_enabled;
     this.siteSettings.crimson_server_list_uptime_history_enabled = true;
-    this.set("model", { server: { id: 42, name: "CrimsonCraft" } });
+    this.set("model", {
+      server: {
+        id: 42,
+        name: "CrimsonCraft",
+        approved: true,
+        enabled: true,
+      },
+    });
   });
 
   hooks.afterEach(function () {
@@ -28,29 +35,32 @@ module("Integration | Component | crimson-server-uptime-panel", function (hooks)
       const sevenDays = request.queryParams.range === "7d";
 
       return response({
-        range: request.queryParams.range,
-        sample_count: sevenDays ? 6 : 3,
-        known_sample_count: sevenDays ? 5 : 2,
-        online_sample_count: sevenDays ? 4 : 1,
-        uptime_percent: sevenDays ? 80 : 50,
-        series: [
-          {
-            sampled_at: "2026-08-28T20:00:00Z",
-            status: "online",
-            response_ms: 45,
-            supports_player_count: true,
-            players_online: 12,
-            players_max: 100,
-          },
-          {
-            sampled_at: "2026-08-28T20:10:00Z",
-            status: "offline",
-            response_ms: null,
-            supports_player_count: false,
-            players_online: null,
-            players_max: null,
-          },
-        ],
+        server: { id: 42, name: "CrimsonCraft", slug: "crimsoncraft" },
+        uptime: {
+          range: request.queryParams.range,
+          sample_count: sevenDays ? 6 : 3,
+          known_sample_count: sevenDays ? 5 : 2,
+          online_sample_count: sevenDays ? 4 : 1,
+          uptime_percent: sevenDays ? 80 : 50,
+          series: [
+            {
+              sampled_at: "2026-08-28T20:00:00Z",
+              status: "online",
+              response_ms: 45,
+              supports_player_count: true,
+              players_online: 12,
+              players_max: 100,
+            },
+            {
+              sampled_at: "2026-08-28T20:10:00Z",
+              status: "offline",
+              response_ms: null,
+              supports_player_count: false,
+              players_online: null,
+              players_max: null,
+            },
+          ],
+        },
       });
     });
 
@@ -78,6 +88,28 @@ module("Integration | Component | crimson-server-uptime-panel", function (hooks)
   test("does not render or request history when the feature is disabled", async function (assert) {
     let requested = false;
     this.siteSettings.crimson_server_list_uptime_history_enabled = false;
+
+    pretender.get("/crimson-server-list/servers/42/uptime.json", () => {
+      requested = true;
+      return response({});
+    });
+
+    await render(
+      <template>
+        <CrimsonServerUptimePanel @model={{this.model}} />
+      </template>
+    );
+    await settled();
+
+    assert.false(requested);
+    assert.dom(".csl-uptime-panel").doesNotExist();
+  });
+
+  test("does not request public history for an unpublished listing", async function (assert) {
+    let requested = false;
+    this.set("model", {
+      server: { id: 42, name: "Draft", approved: false, enabled: true },
+    });
 
     pretender.get("/crimson-server-list/servers/42/uptime.json", () => {
       requested = true;
