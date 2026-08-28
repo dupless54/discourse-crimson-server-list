@@ -17,6 +17,8 @@ en:
     crimson_server_list_verification_enabled: "Allow listing owners to prove control of a hostname with a DNS TXT challenge."
     crimson_server_list_verification_challenge_hours: "How many hours a DNS TXT verification challenge remains valid."
     crimson_server_list_reports_enabled: "Allow signed-in members to report published server listings for administrator review."
+    crimson_server_list_uptime_history_enabled: "Record and expose bounded uptime history for published monitored servers."
+    crimson_server_list_uptime_history_retention_days: "How many days of 10-minute uptime samples to retain (7–90)."
   crimson_server_list:
     statuses:
       unknown: "Unverified"
