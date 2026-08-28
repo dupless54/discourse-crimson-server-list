@@ -1,0 +1,111 @@
+.csl-title-row,
+.csl-server-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.csl-title-row h1,
+.csl-server-card__title-row h2 {
+  margin: 0;
+}
+
+.csl-verified-badge {
+  display: inline-flex;
+  min-height: 1.8em;
+  padding: 0.25em 0.55em;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--success);
+  font-size: var(--font-down-2);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--success) 10%, var(--secondary));
+  border: 1px solid color-mix(in srgb, var(--success) 32%, var(--primary-low));
+  border-radius: 1em;
+}
+
+.csl-verified-badge .d-icon {
+  width: 0.9em;
+  height: 0.9em;
+}
+
+.csl-verification-panel {
+  margin: 1em 0;
+}
+
+.csl-verification-panel__status {
+  display: grid;
+  gap: 0.45em;
+  margin: 0 0 1em;
+}
+
+.csl-verification-panel__status strong {
+  font-size: var(--font-up-1);
+}
+
+.csl-verification-panel__status p {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--primary-medium);
+}
+
+.csl-verification-records {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75em;
+  margin: 1em 0;
+}
+
+.csl-verification-record {
+  min-width: 0;
+  padding: 0.75em;
+  background: var(--primary-very-low);
+  border: 1px solid var(--primary-low);
+}
+
+.csl-verification-record--wide {
+  grid-column: 1 / -1;
+}
+
+.csl-verification-record span {
+  display: block;
+  margin: 0 0 0.35em;
+  color: var(--primary-medium);
+  font-size: var(--font-down-2);
+  font-weight: 600;
+}
+
+.csl-verification-record code {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--primary);
+  font-size: var(--font-down-1);
+  white-space: normal;
+}
+
+.csl-verification-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.csl-verification-help {
+  margin: 0.75em 0 0;
+  color: var(--primary-medium);
+  font-size: var(--font-down-1);
+}
+
+@media (max-width: 600px) {
+  .csl-verification-records {
+    grid-template-columns: 1fr;
+  }
+
+  .csl-verification-record--wide {
+    grid-column: auto;
+  }
+}
