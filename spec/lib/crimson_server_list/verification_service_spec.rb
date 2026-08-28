@@ -75,11 +75,12 @@ RSpec.describe CrimsonServerList::VerificationService do
     server = create_server
     described_class.start!(server)
     server.update_columns(verification_expires_at: 1.minute.ago)
+    allow(described_class).to receive(:lookup_txt_values)
 
-    expect(described_class).not_to receive(:lookup_txt_values)
     expect { described_class.verify!(server.reload) }.to raise_error(
       CrimsonServerList::VerificationService::ChallengeExpired,
     )
+    expect(described_class).not_to have_received(:lookup_txt_values)
   end
 
   it "rejects IP literals for automatic verification" do
