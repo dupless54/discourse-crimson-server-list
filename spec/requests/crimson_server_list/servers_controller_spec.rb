@@ -30,15 +30,25 @@ RSpec.describe CrimsonServerList::ServersController do
   end
 
   def create_server(owner:, name: "Crimson Published Server")
-    CrimsonServerList::Server.create!(
-      **server_attributes(name: name),
-      owner: owner,
-      approved: true,
-      enabled: true,
-      status: "online",
-      players_online: 12,
-      players_max: 100,
-    )
+    server =
+      CrimsonServerList::Server.create!(
+        **server_attributes(name: name),
+        owner: owner,
+        approved: true,
+        enabled: true,
+        status: "online",
+        players_online: 12,
+        players_max: 100,
+      )
+
+    expect(CrimsonServerList::Server.publicly_visible.exists?(server.id)).to eq(true)
+    server
+  end
+
+  def expect_route(path, method:, action:)
+    route = Rails.application.routes.recognize_path(path, method: method)
+    expect(route[:controller]).to eq("crimson_server_list/servers")
+    expect(route[:action]).to eq(action)
   end
 
   describe "POST /crimson-server-list/servers" do
@@ -80,12 +90,14 @@ RSpec.describe CrimsonServerList::ServersController do
   describe "POST /crimson-server-list/servers/:id/vote" do
     it "allows only one vote per user and calendar day" do
       server = create_server(owner: owner)
+      path = "/crimson-server-list/servers/#{server.id}/vote.json"
+      expect_route(path, method: :post, action: "vote")
       sign_in(member)
 
-      post "/crimson-server-list/servers/#{server.id}/vote.json"
+      post path
       expect(response.status).to eq(200)
 
-      post "/crimson-server-list/servers/#{server.id}/vote.json"
+      post path
       expect(response.status).to eq(422)
 
       expect(
@@ -102,14 +114,14 @@ RSpec.describe CrimsonServerList::ServersController do
   describe "PUT /crimson-server-list/servers/:id/review" do
     it "updates the member's existing review instead of creating duplicates" do
       server = create_server(owner: owner)
+      path = "/crimson-server-list/servers/#{server.id}/review.json"
+      expect_route(path, method: :put, action: "upsert_review")
       sign_in(member)
 
-      put "/crimson-server-list/servers/#{server.id}/review.json",
-          params: { rating: 5, body: "Excellent community." }
+      put path, params: { rating: 5, body: "Excellent community." }
       expect(response.status).to eq(200)
 
-      put "/crimson-server-list/servers/#{server.id}/review.json",
-          params: { rating: 3, body: "Updated after another visit." }
+      put path, params: { rating: 3, body: "Updated after another visit." }
       expect(response.status).to eq(200)
 
       reviews = CrimsonServerList::Review.where(server_id: server.id, user_id: member.id)
@@ -124,9 +136,11 @@ RSpec.describe CrimsonServerList::ServersController do
   describe "POST /crimson-server-list/servers/:id/claim" do
     it "keeps ownership unchanged until an admin approves the claim" do
       server = create_server(owner: owner)
+      path = "/crimson-server-list/servers/#{server.id}/claim.json"
+      expect_route(path, method: :post, action: "request_claim")
       sign_in(claimant)
 
-      post "/crimson-server-list/servers/#{server.id}/claim.json", params: { note: "I run this server." }
+      post path, params: { note: "I run this server." }
 
       expect(response.status).to eq(201)
       claim = CrimsonServerList::ClaimRequest.find_by!(server_id: server.id, requester_id: claimant.id)
