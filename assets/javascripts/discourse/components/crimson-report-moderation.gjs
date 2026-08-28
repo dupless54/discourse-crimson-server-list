@@ -138,7 +138,7 @@ export default class CrimsonReportModeration extends Component {
                   <strong><a href={{report.server.detail_url}}>{{report.server.name}}</a></strong>
                   <span>
                     {{i18n "crimson_server_list.reporting.reported_by" username=report.reporter.username}}
-                    · {{i18n (concat "crimson_server_list.reporting.reasons." report.reason)}}
+                    · {{i18n (concat "crimson_server_list.reporting.reason_" report.reason)}}
                   </span>
                   {{#if report.details}}<p>{{report.details}}</p>{{/if}}
                   <small>{{report.created_at}}</small>

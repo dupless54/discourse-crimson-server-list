@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
-# version: 2.4.0
+# version: 2.4.1
 # authors: dupless54
 # url: https://senin.me/servers
 # required_version: 3.3.0
@@ -109,10 +109,13 @@ after_initialize do
   require_relative "app/models/crimson_server_list/claim_request"
   require_relative "app/models/crimson_server_list/report"
   require_relative "app/controllers/crimson_server_list/servers_controller"
+  require_relative "lib/crimson_server_list/anti_abuse"
   require_relative "app/controllers/crimson_server_list/verifications_controller"
   require_relative "app/controllers/crimson_server_list/reports_controller"
   require_relative "app/jobs/regular/crimson_server_list_probe"
   require_relative "app/jobs/scheduled/crimson_server_list_refresh"
+
+  CrimsonServerList::ServersController.prepend(CrimsonServerList::AntiAbuse)
 
   Discourse::Application.routes.append do
     # Public Ember pages still need a Rails route for direct visits and hard

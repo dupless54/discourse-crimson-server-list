@@ -38,7 +38,7 @@ export default class CrimsonServerReportPanel extends Component {
     return ["spam", "misleading", "impersonation", "unsafe", "unreachable", "other"].map(
       (value) => ({
         value,
-        label: i18n(`crimson_server_list.reporting.reasons.${value}`),
+        label: i18n(`crimson_server_list.reporting.reason_${value}`),
       }),
     );
   }
