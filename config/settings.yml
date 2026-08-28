@@ -41,3 +41,10 @@ plugins:
     default: 100
     min: 10
     max: 200
+  crimson_server_list_verification_enabled:
+    default: true
+    client: true
+  crimson_server_list_verification_challenge_hours:
+    default: 24
+    min: 1
+    max: 168
