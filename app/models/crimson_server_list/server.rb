@@ -26,6 +26,10 @@ module ::CrimsonServerList
              class_name: "::CrimsonServerList::Report",
              dependent: :destroy,
              inverse_of: :server
+    has_many :uptime_samples,
+             class_name: "::CrimsonServerList::UptimeSample",
+             dependent: :delete_all,
+             inverse_of: :server
 
     before_validation :reset_verification_if_identity_changed
     before_validation :ensure_slug
