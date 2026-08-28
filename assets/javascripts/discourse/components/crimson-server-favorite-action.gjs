@@ -43,6 +43,10 @@ export default class CrimsonServerFavoriteAction extends Component {
     return this.isLoading || this.isBusy;
   }
 
+  get ariaPressed() {
+    return this.favorited ? "true" : "false";
+  }
+
   get buttonLabel() {
     if (this.isBusy) {
       return i18n("crimson_server_list.favorites.saving");
@@ -114,7 +118,7 @@ export default class CrimsonServerFavoriteAction extends Component {
           class="csl-button csl-favorite-action__button {{if this.favorited "is-active" ""}}"
           type="button"
           disabled={{this.isDisabled}}
-          aria-pressed={{this.favorited}}
+          aria-pressed={{this.ariaPressed}}
           {{on "click" this.toggleFavorite}}
         >
           {{#if this.isLoading}}
