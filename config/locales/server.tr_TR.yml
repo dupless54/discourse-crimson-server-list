@@ -14,6 +14,8 @@ tr_TR:
     crimson_server_list_reviews_enabled: "Forum üyelerinin sunuculara yorum ve 1–5 yıldız değerlendirme bırakmasına izin ver."
     crimson_server_list_owner_edits_require_approval: "Sunucu sahibinin yaptığı düzenlemeleri tekrar yönetici onayına gönder."
     crimson_server_list_reviews_limit: "Sunucu tanıtımında gösterilecek en fazla değerlendirme sayısı."
+    crimson_server_list_verification_enabled: "İlan sahiplerinin DNS TXT kaydı ile alan adı kontrolünü doğrulamasına izin ver."
+    crimson_server_list_verification_challenge_hours: "DNS TXT doğrulama isteğinin kaç saat geçerli kalacağını belirler."
   crimson_server_list:
     statuses:
       unknown: "Doğrulanmadı"
@@ -32,6 +34,8 @@ tr_TR:
       claim_submitted: "Sahiplik talebin yönetici onayına gönderildi."
       claim_approved: "Sahiplik talebi onaylandı ve ilan yeni forum hesabına aktarıldı."
       claim_rejected: "Sahiplik talebi reddedildi."
+      verification_started: "DNS doğrulama kaydı oluşturuldu. TXT kaydını ekledikten sonra doğrulamayı kontrol et."
+      verification_succeeded: "Sunucu sahipliği DNS üzerinden doğrulandı."
     errors:
       submissions_disabled: "Sunucu başvuruları şu anda kapalı."
       votes_disabled: "Sunucu oylaması şu anda kapalı."
@@ -43,3 +47,10 @@ tr_TR:
       claim_pending: "Bu sunucu için bekleyen bir sahiplik talebin zaten var."
       invalid_claim_decision: "Geçersiz sahiplik kararı."
       claim_already_reviewed: "Bu sahiplik talebi daha önce sonuçlandırılmış."
+      verification_disabled: "Sunucu doğrulama sistemi şu anda kapalı."
+      verification_not_eligible: "Otomatik doğrulama için güvenli ve genel internete açık bir alan adı gerekir; doğrudan IP adresleri desteklenmez."
+      verification_challenge_missing: "Kontrol etmeden önce bir DNS doğrulama isteği oluştur."
+      verification_challenge_expired: "Bu DNS doğrulama isteğinin süresi doldu. Yeni bir doğrulama isteği oluştur."
+      verification_failed: "Beklenen DNS TXT kaydı henüz bulunamadı."
+      verification_lookup_failed: "DNS doğrulama sorgusu tamamlanamadı. Daha sonra yeniden dene."
+      verification_rate_limited: "Doğrulama kısa süre önce kontrol edildi. Yeniden denemeden önce biraz bekle."
