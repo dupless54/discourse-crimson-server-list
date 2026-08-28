@@ -1,9 +1,19 @@
 # discourse-crimson-server-list
 
-Sürüm: **2.4.1**
+Sürüm: **2.5.0**
 
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.5.0 uptime history backend
+
+- Başarılı ve başarısız Sidekiq probe sonuçları sunucu başına 10 dakikalık zaman bucket'larında geçmiş sağlık örneklerine dönüştürülür.
+- Aynı sunucu ve aynı 10 dakikalık bucket için yalnızca tek kayıt tutulur; sık probe veya elle yenileme geçmiş tablosunu gereksiz büyütmez.
+- Varsayılan retention 30 gündür ve yönetici tarafından 7–90 gün arasında ayarlanabilir. Günlük cleanup eski kayıtları 5.000 satırlık batch'lerle siler.
+- Uptime yüzdesi yalnızca `online` ve `offline` örneklerinden hesaplanır; `unknown` ve `maintenance` yüzdesi yapay biçimde düşürmez/yükseltmez.
+- Oyuncu sayısı desteği olmayan adaptörlerde geçmiş `players_online` / `players_max` değerleri `null` tutulur; sayı uydurulmaz.
+- Public `/crimson-server-list/servers/:id/uptime.json` endpoint'i yalnız yayındaki sunuculara 24 saat, 7 gün veya 30 günlük geçmiş verir ve grafik serisini en fazla 240 noktaya sıkıştırır.
+- History yazımı secondary telemetry'dir; geçmiş kaydı yazılamazsa canlı probe sonucu bozulmaz. Sunucu silinirse DB foreign key `ON DELETE CASCADE` ile geçmiş örnekleri de temizlenir.
 
 ## 2.4.1 anti-abuse iyileştirmeleri
 
@@ -132,7 +142,7 @@ bilinçli biçimde eklenmelidir.
 
 1. Bu dizini mevcut eklenti Git deposunun köküne yükleyin.
 2. `/var/discourse` altında `./launcher rebuild app` çalıştırın. Yeni migration,
-   etiket, canlı durum ve değerlendirme alanlarını otomatik oluşturur.
+   etiket, canlı durum, değerlendirme ve bounded uptime history tablosunu otomatik oluşturur.
 3. Yönetim panelinde **Eklentiler → Crimson server list** ayarlarını gözden
    geçirin.
 4. `/servers` adresini açın.
@@ -147,6 +157,7 @@ kayıtları korunur.
 - Yorum ve yıldızlar: `crimson_server_reviews`
 - Sahiplik talepleri: `crimson_server_claim_requests`
 - Sunucu raporları: `crimson_server_reports`
+- Uptime history: `crimson_server_uptime_samples`
 - Sunucu etiketleri: `crimson_game_servers.tags` JSONB alanı ve GIN indeksi
 - Başvuru, oy, yorum, elle yenileme ve sahip düzenlemesi oturum gerektirir.
 - Bir kullanıcı aynı sunucuya yalnızca bir değerlendirme bırakabilir; yeniden
@@ -184,3 +195,5 @@ kayıtları korunur.
 - `crimson_server_list_verification_enabled`
 - `crimson_server_list_verification_challenge_hours`
 - `crimson_server_list_reports_enabled`
+- `crimson_server_list_uptime_history_enabled`
+- `crimson_server_list_uptime_history_retention_days`
