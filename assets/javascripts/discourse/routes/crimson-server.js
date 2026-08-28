@@ -11,14 +11,4 @@ export default class CrimsonServerRoute extends DiscourseRoute {
   titleToken() {
     return this.currentModel?.server?.name || "Sunucu tanıtımı";
   }
-
-  activate() {
-    document.body.classList.add("crimson-server-list-route");
-    document.body.classList.add("crimson-server-detail-route");
-  }
-
-  deactivate() {
-    document.body.classList.remove("crimson-server-list-route");
-    document.body.classList.remove("crimson-server-detail-route");
-  }
 }
