@@ -74,7 +74,7 @@ module ::CrimsonServerList
           .includes(:reporter, server: :owner)
           .find(params[:id])
       decision = params[:status].to_s
-      unless %w[resolved dismissed].include?(decision)
+      if %w[resolved dismissed].exclude?(decision)
         return render_error(I18n.t("crimson_server_list.errors.invalid_report_decision"), :unprocessable_entity)
       end
 
