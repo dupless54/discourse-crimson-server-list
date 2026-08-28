@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
-# version: 2.4.1
+# version: 2.5.0
 # authors: dupless54
 # url: https://senin.me/servers
 # required_version: 3.3.0
@@ -108,12 +108,16 @@ after_initialize do
   require_relative "app/models/crimson_server_list/review"
   require_relative "app/models/crimson_server_list/claim_request"
   require_relative "app/models/crimson_server_list/report"
+  require_relative "app/models/crimson_server_list/uptime_sample"
+  require_relative "lib/crimson_server_list/uptime_history"
   require_relative "app/controllers/crimson_server_list/servers_controller"
   require_relative "lib/crimson_server_list/anti_abuse"
   require_relative "app/controllers/crimson_server_list/verifications_controller"
   require_relative "app/controllers/crimson_server_list/reports_controller"
+  require_relative "app/controllers/crimson_server_list/uptime_controller"
   require_relative "app/jobs/regular/crimson_server_list_probe"
   require_relative "app/jobs/scheduled/crimson_server_list_refresh"
+  require_relative "app/jobs/scheduled/crimson_server_list_uptime_cleanup"
 
   CrimsonServerList::ServersController.prepend(CrimsonServerList::AntiAbuse)
 
@@ -130,6 +134,7 @@ after_initialize do
       get "/crimson-server-list/servers/:id/verification" => "crimson_server_list/verifications#show"
       post "/crimson-server-list/servers/:id/verification" => "crimson_server_list/verifications#start"
       post "/crimson-server-list/servers/:id/verification/check" => "crimson_server_list/verifications#check"
+      get "/crimson-server-list/servers/:id/uptime" => "crimson_server_list/uptime#show"
       get "/crimson-server-list/servers/:slug" => "crimson_server_list/servers#show"
       post "/crimson-server-list/servers" => "crimson_server_list/servers#create"
       put "/crimson-server-list/servers/:id" => "crimson_server_list/servers#update_owned"
