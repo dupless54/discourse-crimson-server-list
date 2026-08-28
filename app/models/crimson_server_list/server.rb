@@ -7,6 +7,7 @@ module ::CrimsonServerList
     self.table_name = "crimson_game_servers"
 
     STATUSES = %w[unknown online offline maintenance].freeze
+    VERIFICATION_METHODS = %w[dns_txt].freeze
 
     belongs_to :owner, class_name: "::User", optional: false
     has_many :votes,
@@ -22,6 +23,7 @@ module ::CrimsonServerList
              dependent: :destroy,
              inverse_of: :server
 
+    before_validation :reset_verification_if_identity_changed
     before_validation :ensure_slug
     before_validation :normalize_tags
 
@@ -64,6 +66,8 @@ module ::CrimsonServerList
               }
     validates :country_code, length: { maximum: 2 }, allow_blank: true
     validates :language, :version, :mode, length: { maximum: 60 }, allow_blank: true
+    validates :verification_method, inclusion: { in: VERIFICATION_METHODS }, allow_nil: true
+    validates :verification_token_digest, length: { is: 64 }, allow_nil: true
     validate :players_are_consistent
     validate :external_urls_are_safe
     validate :host_is_allowed
@@ -83,7 +87,21 @@ module ::CrimsonServerList
       (rating_sum.to_f / review_count.to_i).round(1)
     end
 
+    def verified?
+      verified_at.present?
+    end
+
     private
+
+    def reset_verification_if_identity_changed
+      return unless new_record? || will_save_change_to_host? || will_save_change_to_owner_id?
+
+      self.verified_at = nil
+      self.verification_method = nil
+      self.verification_token_digest = nil
+      self.verification_requested_at = nil
+      self.verification_expires_at = nil
+    end
 
     def ensure_slug
       return if name.blank?
@@ -207,41 +225,46 @@ end
 #
 # Table name: crimson_game_servers
 #
-#  id                 :bigint           not null, primary key
-#  approved           :boolean          default(FALSE), not null
-#  banner_url         :string
-#  country_code       :string(2)
-#  description        :text
-#  discord_url        :string
-#  enabled            :boolean          default(TRUE), not null
-#  featured           :boolean          default(FALSE), not null
-#  game_details       :jsonb            not null
-#  game_slug          :string(60)       not null
-#  host               :string           not null
-#  language           :string(60)
-#  last_checked_at    :datetime
-#  last_query_error   :string(500)
-#  last_response_ms   :integer
-#  mode               :string(60)
-#  monitoring_enabled :boolean          default(TRUE), not null
-#  name               :string(100)      not null
-#  players_max        :integer          default(0), not null
-#  players_online     :integer          default(0), not null
-#  port               :integer          not null
-#  query_port         :integer
-#  rating_sum         :integer          default(0), not null
-#  review_count       :integer          default(0), not null
-#  short_description  :string(180)      not null
-#  slug               :string(120)      not null
-#  status             :string(20)       default("unknown"), not null
-#  tags               :jsonb            not null
-#  version            :string(60)
-#  view_count         :bigint           default(0), not null
-#  vote_count         :integer          default(0), not null
-#  website_url        :string
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
-#  owner_id           :integer
+#  id                        :bigint           not null, primary key
+#  approved                  :boolean          default(FALSE), not null
+#  banner_url                :string
+#  country_code              :string(2)
+#  description               :text
+#  discord_url               :string
+#  enabled                   :boolean          default(TRUE), not null
+#  featured                  :boolean          default(FALSE), not null
+#  game_details              :jsonb            not null
+#  game_slug                 :string(60)       not null
+#  host                      :string           not null
+#  language                  :string(60)
+#  last_checked_at           :datetime
+#  last_query_error          :string(500)
+#  last_response_ms          :integer
+#  mode                      :string(60)
+#  monitoring_enabled        :boolean          default(TRUE), not null
+#  name                      :string(100)      not null
+#  players_max               :integer          default(0), not null
+#  players_online            :integer          default(0), not null
+#  port                      :integer          not null
+#  query_port                :integer
+#  rating_sum                :integer          default(0), not null
+#  review_count              :integer          default(0), not null
+#  short_description         :string(180)      not null
+#  slug                      :string(120)      not null
+#  status                    :string(20)       default("unknown"), not null
+#  tags                      :jsonb            not null
+#  verification_expires_at   :datetime
+#  verification_method       :string(20)
+#  verification_requested_at :datetime
+#  verification_token_digest :string(64)
+#  verified_at               :datetime
+#  version                   :string(60)
+#  view_count                :bigint           default(0), not null
+#  vote_count                :integer          default(0), not null
+#  website_url               :string
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  owner_id                  :integer
 #
 # Indexes
 #
@@ -252,4 +275,5 @@ end
 #  index_crimson_game_servers_on_owner_id                 (owner_id)
 #  index_crimson_game_servers_on_slug                     (slug) UNIQUE
 #  index_crimson_game_servers_on_tags                     (tags) USING gin
+#  index_crimson_game_servers_on_verified_at              (verified_at)
 #
