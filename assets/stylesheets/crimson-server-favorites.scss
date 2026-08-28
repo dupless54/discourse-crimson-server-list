@@ -1,0 +1,129 @@
+.csl-favorite-action,
+.csl-favorites-panel {
+  margin-top: 1rem;
+}
+
+.csl-favorite-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.csl-favorite-action__copy {
+  min-width: 0;
+}
+
+.csl-favorite-action__copy h2,
+.csl-favorites-panel__header h2,
+.csl-favorite-card h3 {
+  margin: 0;
+}
+
+.csl-favorite-action__copy > p:last-child,
+.csl-favorites-panel__header > div > p:last-child,
+.csl-favorite-card__body > p {
+  margin: 0.35rem 0 0;
+  color: var(--primary-medium);
+}
+
+.csl-favorite-action__button.is-active {
+  background: var(--tertiary-low);
+  border-color: var(--tertiary-medium);
+  color: var(--tertiary);
+}
+
+.csl-favorite-action__error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.csl-favorites-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.csl-favorites-panel__summary {
+  margin-top: 1rem;
+  color: var(--primary-medium);
+  font-size: var(--font-down-1);
+}
+
+.csl-favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.csl-favorite-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--primary-low);
+  border-radius: var(--d-border-radius-large, 8px);
+  background: var(--secondary);
+}
+
+.csl-favorite-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.csl-favorite-card__title-row h3 {
+  min-width: 0;
+  flex: 1;
+  font-size: var(--font-up-1);
+}
+
+.csl-favorite-card__title-row a {
+  color: var(--primary);
+  overflow-wrap: anywhere;
+}
+
+.csl-favorite-card .csl-status {
+  margin-top: 0.75rem;
+}
+
+.csl-favorite-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.csl-favorite-card__actions .csl-button {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+@media (max-width: 700px) {
+  .csl-favorite-action {
+    grid-template-columns: 1fr;
+  }
+
+  .csl-favorite-action__button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .csl-favorites-panel__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .csl-favorites-panel__toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .csl-favorites-grid {
+    grid-template-columns: 1fr;
+  }
+}
