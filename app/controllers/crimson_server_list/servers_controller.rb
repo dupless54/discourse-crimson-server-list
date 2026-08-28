@@ -410,6 +410,7 @@ module ::CrimsonServerList
             server.owner_id != current_user.id && claim&.status != "pending",
         claim_status: claim&.status,
         live_query_enabled: SiteSetting.crimson_server_list_live_query_enabled,
+        verification_enabled: SiteSetting.crimson_server_list_verification_enabled,
       }
     end
 
@@ -478,6 +479,9 @@ module ::CrimsonServerList
         review_count: server.review_count,
         average_rating: server.average_rating,
         view_count: server.view_count,
+        verified: server.verified?,
+        verified_at: server.verified_at&.iso8601,
+        verification_method: server.verification_method,
         can_edit: can_manage_server?(server),
         can_delete: current_user&.staff? || false,
         can_view_endpoint: can_view_endpoint,
