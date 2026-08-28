@@ -61,6 +61,27 @@ RSpec.describe CrimsonServerList::ReportsController do
     expect(json_body.dig(:report, :server, :id)).to eq(server.id)
   end
 
+  it "never leaks report content or reporter identity through public server APIs" do
+    server = create_server
+    marker = "PRIVATE-REPORT-EVIDENCE-#{SecureRandom.hex(4)}"
+    CrimsonServerList::Report.create!(
+      server: server,
+      reporter: member,
+      reason: "misleading",
+      details: marker,
+    )
+
+    get "/crimson-server-list.json"
+    expect(response.status).to eq(200)
+    expect(response.body).not_to include(marker)
+    expect(response.body).not_to include(member.username)
+
+    get "/crimson-server-list/servers/#{server.slug}.json"
+    expect(response.status).to eq(200)
+    expect(response.body).not_to include(marker)
+    expect(response.body).not_to include(member.username)
+  end
+
   it "does not allow a listing owner to report their own server" do
     server = create_server
     sign_in(owner)
@@ -121,9 +142,15 @@ RSpec.describe CrimsonServerList::ReportsController do
     expect(CrimsonServerList::Report.count).to eq(0)
   end
 
-  it "keeps the moderation queue admin-only and returns reporter identity only there" do
+  it "keeps the moderation queue admin-only, pending-only, and returns reporter identity only there" do
     server = create_server
     report = CrimsonServerList::Report.create!(server: server, reporter: member, reason: "spam")
+    CrimsonServerList::Report.create!(
+      server: server,
+      reporter: other_member,
+      reason: "unsafe",
+      status: "resolved",
+    )
 
     sign_in(other_member)
     get "/crimson-server-list/admin/reports.json"
@@ -159,12 +186,17 @@ RSpec.describe CrimsonServerList::ReportsController do
     expect(server).to be_enabled
   end
 
-  it "rejects invalid or repeated moderation decisions" do
+  it "rejects invalid, oversized, or repeated moderation decisions" do
     server = create_server
     report = CrimsonServerList::Report.create!(server: server, reporter: member, reason: "spam")
     sign_in(admin)
 
     put "/crimson-server-list/admin/reports/#{report.id}.json", params: { status: "delete" }
+    expect(response.status).to eq(422)
+    expect(report.reload.status).to eq("pending")
+
+    put "/crimson-server-list/admin/reports/#{report.id}.json",
+        params: { status: "resolved", review_note: "x" * 1001 }
     expect(response.status).to eq(422)
     expect(report.reload.status).to eq("pending")
 
