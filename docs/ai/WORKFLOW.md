@@ -1,13 +1,16 @@
 # CI-first delivery workflow
 
-Any model may act as Builder. Independent ChatGPT/Codex review and Gemini final verification are optional tools, not default merge gates.
+Any supported model may act as Builder. Claude, Gemini, ChatGPT/Codex, or other AI review/verification is optional and advisory unless the user explicitly requires a named reviewer for the current task. AI approval is never a default merge gate.
 
 ## Mandatory delivery gate
 - keep task scope locked
 - validate exact changed paths
 - run relevant targeted checks when available
-- require required CI to be GREEN for the latest exact PR head SHA
+- require the official `Discourse Plugin` workflow to be GREEN for the latest exact PR head SHA
+- if the repository has another required Discourse-owned check named `Discourse CI`, require it to be GREEN too
 - never reuse CI evidence from an older head SHA
+- treat missing, skipped, cancelled, or not-run required checks as not GREEN
+- require explicit user authorization before merging; conditional authorization for a GREEN CI state is sufficient
 
 ## CI failure remediation
 If CI fails, inspect the failing job, find the first actionable root cause, classify it as code/test-fixture/dependency/infrastructure, make the smallest justified repair, run targeted validation, push a new head, then evaluate CI again for that new SHA. Never weaken tests or expand product/architecture scope merely to make CI green.
