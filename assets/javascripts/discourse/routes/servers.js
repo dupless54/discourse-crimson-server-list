@@ -9,12 +9,4 @@ export default class ServersRoute extends DiscourseRoute {
   titleToken() {
     return "Özel Oyun Sunucuları";
   }
-
-  activate() {
-    document.body.classList.add("crimson-server-list-route");
-  }
-
-  deactivate() {
-    document.body.classList.remove("crimson-server-list-route");
-  }
 }
