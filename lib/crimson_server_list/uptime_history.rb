@@ -3,7 +3,6 @@
 module ::CrimsonServerList
   module UptimeHistory
     BUCKET_SECONDS = 10.minutes.to_i
-    DEFAULT_RETENTION_DAYS = 30
     MAX_RETENTION_DAYS = 90
     MAX_SERIES_POINTS = 240
     RANGE_SECONDS = {
@@ -52,10 +51,7 @@ module ::CrimsonServerList
     end
 
     def retention_days
-      SiteSetting.crimson_server_list_uptime_history_retention_days.to_i.clamp(
-        7,
-        MAX_RETENTION_DAYS,
-      ).presence || DEFAULT_RETENTION_DAYS
+      SiteSetting.crimson_server_list_uptime_history_retention_days.to_i.clamp(7, MAX_RETENTION_DAYS)
     end
 
     def range_duration(value)
