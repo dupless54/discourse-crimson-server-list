@@ -1,9 +1,16 @@
 # discourse-crimson-server-list
 
-Sürüm: **2.2.1**
+Sürüm: **2.2.2**
 
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.2.2 iyileştirmeleri
+
+- `/servers` ve sunucu detay sayfaları Discourse uygulama kabuğu, tema değişkenleri ve native yoğunlukla uyumlu hale getirildi.
+- Resmî `Discourse Plugin` GitHub Actions iş akışı eklendi.
+- Minimum Token Context v3 çalışma kuralları projeye dahil edildi; AI reviewer onayları varsayılan merge gate olmaktan çıkarıldı.
+- Ruby lint ve schema annotation uyumluluğu resmî Discourse CI gereksinimlerine göre güncellendi.
 
 ## 2.2.1 düzeltmesi
 

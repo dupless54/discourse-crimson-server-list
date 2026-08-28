@@ -30,7 +30,7 @@ end
 #  updated_at     :datetime         not null
 #  requester_id   :integer          not null
 #  reviewed_by_id :integer
-#  server_id      :integer          not null
+#  server_id      :bigint           not null
 #
 # Indexes
 #

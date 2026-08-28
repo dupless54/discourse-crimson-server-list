@@ -23,7 +23,7 @@ end
 #  voted_on   :date             not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
-#  server_id  :integer          not null
+#  server_id  :bigint           not null
 #  user_id    :integer          not null
 #
 # Indexes
