@@ -44,7 +44,14 @@ module ::CrimsonServerList
       server = managed_server
       return rate_limited unless acquire_throttle!("start", server, 10)
 
-      challenge = CrimsonServerList::VerificationService.start!(server)
+      challenge = nil
+      server.with_lock do
+        server.reload
+        raise Discourse::InvalidAccess unless can_manage_server?(server)
+
+        challenge = CrimsonServerList::VerificationService.start!(server)
+      end
+
       render json: {
                verification:
                  serialize_verification(server.reload, include_private: true).merge(
