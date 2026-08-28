@@ -68,6 +68,16 @@ RSpec.describe CrimsonServerList::UptimeHistory do
     expect(sample.players_max).to be_nil
   end
 
+  it "normalizes unexpected probe statuses to unknown" do
+    described_class.record!(
+      server: server,
+      status: "unexpected",
+      checked_at: Time.zone.now,
+    )
+
+    expect(CrimsonServerList::UptimeSample.find_by!(server_id: server.id).status).to eq("unknown")
+  end
+
   it "calculates uptime from online and offline samples only" do
     now = Time.zone.parse("2026-08-29 12:00:00")
     samples =
@@ -107,6 +117,24 @@ RSpec.describe CrimsonServerList::UptimeHistory do
 
     expect(summary[:uptime_percent]).to be_nil
     expect(summary[:known_sample_count]).to eq(0)
+  end
+
+  it "caps compacted series at 240 points while preserving both ends" do
+    start = Time.zone.parse("2026-08-27 00:00:00")
+    samples =
+      Array.new(300) do |index|
+        CrimsonServerList::UptimeSample.new(
+          sampled_at: start + index.minutes,
+          status: "online",
+          supports_player_count: false,
+        )
+      end
+
+    series = described_class.compact_series(samples)
+
+    expect(series.length).to eq(240)
+    expect(series.first[:sampled_at]).to eq(samples.first.sampled_at.iso8601)
+    expect(series.last[:sampled_at]).to eq(samples.last.sampled_at.iso8601)
   end
 
   it "clamps configured retention to the supported range" do
