@@ -27,3 +27,22 @@ module ::CrimsonServerList
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: crimson_server_reviews
+#
+#  id         :bigint           not null, primary key
+#  body       :text             not null
+#  rating     :integer          not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  server_id  :integer          not null
+#  user_id    :integer          not null
+#
+# Indexes
+#
+#  idx_crimson_server_review_per_user         (server_id,user_id) UNIQUE
+#  index_crimson_server_reviews_on_server_id  (server_id)
+#  index_crimson_server_reviews_on_user_id    (user_id)
+#
