@@ -3,6 +3,8 @@ import CrimsonServerList from "../components/crimson-server-list";
 
 export default RouteTemplate(
   <template>
-    <CrimsonServerList @model={{@model}} />
+    <div class="wrap csl-route-wrap">
+      <CrimsonServerList @model={{@model}} />
+    </div>
   </template>,
 );
