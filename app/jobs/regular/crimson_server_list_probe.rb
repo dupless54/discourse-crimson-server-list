@@ -163,12 +163,12 @@ module ::Jobs
     def notify_follow(follow, server, transition_at)
       ::CrimsonServerList::Follow.transaction do
         locked_follow = ::CrimsonServerList::Follow.lock.find_by(id: follow.id)
-        return unless locked_follow&.notifications_enabled?
-        return if locked_follow.last_online_notification_at.present? &&
+        next unless locked_follow&.notifications_enabled?
+        next if locked_follow.last_online_notification_at.present? &&
           locked_follow.last_online_notification_at >= transition_at
 
         user = locked_follow.user
-        return unless user&.active?
+        next unless user&.active?
 
         notification =
           Notification.new(
