@@ -80,7 +80,7 @@ module ::CrimsonServerList
         packet_length = read_varint(socket)
         payload = read_exact(socket, packet_length)
         packet_id, offset = decode_varint(payload, 0)
-        raise ProbeError, "unexpected Minecraft packet" unless packet_id.zero?
+        raise ProbeError, "unexpected Minecraft packet" if packet_id.nonzero?
 
         json_length, offset = decode_varint(payload, offset)
         json_payload = payload.byteslice(offset, json_length)
@@ -115,7 +115,7 @@ module ::CrimsonServerList
         loop do
           byte = unsigned & 0x7f
           unsigned >>= 7
-          byte |= 0x80 unless unsigned.zero?
+          byte |= 0x80 if unsigned.nonzero?
           bytes << byte
           break if unsigned.zero?
         end
