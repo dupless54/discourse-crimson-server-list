@@ -45,3 +45,27 @@ module ::CrimsonServerList
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: crimson_server_reports
+#
+#  id             :bigint           not null, primary key
+#  details        :text
+#  reason         :string(30)       not null
+#  review_note    :text
+#  reviewed_at    :datetime
+#  status         :string(20)       default("pending"), not null
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  reporter_id    :integer          not null
+#  reviewed_by_id :integer
+#  server_id      :bigint           not null
+#
+# Indexes
+#
+#  idx_crimson_report_pending_per_user                    (server_id,reporter_id) UNIQUE WHERE ((status)::text = 'pending'::text)
+#  index_crimson_server_reports_on_reporter_id             (reporter_id)
+#  index_crimson_server_reports_on_server_id_and_status    (server_id,status)
+#  index_crimson_server_reports_on_status_and_created_at   (status,created_at)
+#
