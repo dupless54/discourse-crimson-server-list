@@ -124,7 +124,10 @@ RSpec.describe Jobs::CrimsonServerListFollowNotification do
       notifications_enabled: true,
     )
     transition_at = Time.zone.now.change(usec: 0)
-    allow(Jobs).to receive(:enqueue)
+    enqueued = []
+    allow(Jobs).to receive(:enqueue) do |job_name, **args|
+      enqueued << [job_name, args]
+    end
 
     stub_const(described_class, :BATCH_SIZE, 1) do
       described_class.new.execute(
@@ -134,14 +137,18 @@ RSpec.describe Jobs::CrimsonServerListFollowNotification do
       )
     end
 
-    expect(Jobs).to have_received(:enqueue).with(
-      :crimson_server_list_follow_notification,
-      hash_including(
-        server_id: server.id,
-        event: "back_online",
-        transition_at: transition_at.iso8601,
-        after_id: first_follow.id,
-      ),
+    expect(enqueued).to eq(
+      [
+        [
+          :crimson_server_list_follow_notification,
+          {
+            server_id: server.id,
+            event: "back_online",
+            transition_at: transition_at.iso8601,
+            after_id: first_follow.id,
+          },
+        ],
+      ],
     )
   end
 end
