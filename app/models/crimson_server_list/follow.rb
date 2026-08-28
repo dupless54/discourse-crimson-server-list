@@ -4,9 +4,7 @@ module ::CrimsonServerList
   class Follow < ActiveRecord::Base
     self.table_name = "crimson_server_follows"
 
-    belongs_to :server,
-               class_name: "::CrimsonServerList::Server",
-               inverse_of: :follows
+    belongs_to :server, class_name: "::CrimsonServerList::Server"
     belongs_to :user, class_name: "::User"
 
     validates :user_id, uniqueness: { scope: :server_id }
