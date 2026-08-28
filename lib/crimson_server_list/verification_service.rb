@@ -39,52 +39,69 @@ module ::CrimsonServerList
     end
 
     def self.start!(server)
-      raise NotEligible unless eligible?(server)
+      server.with_lock do
+        server.reload
+        raise NotEligible unless eligible?(server)
 
-      token = SecureRandom.urlsafe_base64(24)
-      record_value = "#{VALUE_PREFIX}#{token}"
-      now = Time.zone.now
-      expires_at = now + challenge_hours.hours
+        token = SecureRandom.urlsafe_base64(24)
+        record_value = "#{VALUE_PREFIX}#{token}"
+        now = Time.zone.now
+        expires_at = now + challenge_hours.hours
 
-      server.update_columns(
-        verified_at: nil,
-        verification_method: nil,
-        verification_token_digest: digest(record_value),
-        verification_requested_at: now,
-        verification_expires_at: expires_at,
-        updated_at: now,
-      )
+        server.update_columns(
+          verified_at: nil,
+          verification_method: nil,
+          verification_token_digest: digest(record_value),
+          verification_requested_at: now,
+          verification_expires_at: expires_at,
+          updated_at: now,
+        )
 
-      {
-        record_type: "TXT",
-        record_name: record_name(server),
-        record_value: record_value,
-        expires_at: expires_at.iso8601,
-      }
+        {
+          record_type: "TXT",
+          record_name: record_name(server),
+          record_value: record_value,
+          expires_at: expires_at.iso8601,
+        }
+      end
     end
 
     def self.verify!(server)
+      server.reload
       raise NotEligible unless eligible?(server)
       raise ChallengeMissing if server.verification_token_digest.blank? || server.verification_expires_at.blank?
       raise ChallengeExpired unless server.verification_expires_at.future?
 
-      expected_digest = server.verification_token_digest
+      snapshot = {
+        host: normalized_host(server),
+        owner_id: server.owner_id,
+        token_digest: server.verification_token_digest,
+      }
+
       matched =
         lookup_txt_values(record_name(server)).any? do |value|
           candidate = digest(value)
-          ActiveSupport::SecurityUtils.secure_compare(candidate, expected_digest)
+          ActiveSupport::SecurityUtils.secure_compare(candidate, snapshot[:token_digest])
         end
       raise VerificationFailed unless matched
 
-      now = Time.zone.now
-      server.update_columns(
-        verified_at: now,
-        verification_method: "dns_txt",
-        verification_token_digest: nil,
-        verification_requested_at: nil,
-        verification_expires_at: nil,
-        updated_at: now,
-      )
+      server.with_lock do
+        server.reload
+        raise NotEligible unless eligible?(server)
+        raise ChallengeMissing if server.verification_token_digest.blank? || server.verification_expires_at.blank?
+        raise ChallengeExpired unless server.verification_expires_at.future?
+        raise ChallengeMissing unless same_challenge?(server, snapshot)
+
+        now = Time.zone.now
+        server.update_columns(
+          verified_at: now,
+          verification_method: "dns_txt",
+          verification_token_digest: nil,
+          verification_requested_at: nil,
+          verification_expires_at: nil,
+          updated_at: now,
+        )
+      end
 
       server.reload
     end
@@ -97,6 +114,17 @@ module ::CrimsonServerList
     def self.challenge_hours
       SiteSetting.crimson_server_list_verification_challenge_hours.to_i.clamp(1, 168)
     end
+
+    def self.same_challenge?(server, snapshot)
+      return false unless normalized_host(server) == snapshot[:host]
+      return false unless server.owner_id == snapshot[:owner_id]
+
+      ActiveSupport::SecurityUtils.secure_compare(
+        server.verification_token_digest,
+        snapshot[:token_digest],
+      )
+    end
+    private_class_method :same_challenge?
 
     def self.normalized_host(server)
       CrimsonServerList::NetworkPolicy.normalize_host(server.host).to_s.downcase.chomp(".")
