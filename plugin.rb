@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
-# version: 2.3.0
+# version: 2.4.0
 # authors: dupless54
 # url: https://senin.me/servers
 # required_version: 3.3.0
@@ -107,8 +107,10 @@ after_initialize do
   require_relative "app/models/crimson_server_list/vote"
   require_relative "app/models/crimson_server_list/review"
   require_relative "app/models/crimson_server_list/claim_request"
+  require_relative "app/models/crimson_server_list/report"
   require_relative "app/controllers/crimson_server_list/servers_controller"
   require_relative "app/controllers/crimson_server_list/verifications_controller"
+  require_relative "app/controllers/crimson_server_list/reports_controller"
   require_relative "app/jobs/regular/crimson_server_list_probe"
   require_relative "app/jobs/scheduled/crimson_server_list_refresh"
 
@@ -132,8 +134,11 @@ after_initialize do
       post "/crimson-server-list/servers/:id/vote" => "crimson_server_list/servers#vote"
       post "/crimson-server-list/servers/:id/refresh" => "crimson_server_list/servers#refresh"
       post "/crimson-server-list/servers/:id/claim" => "crimson_server_list/servers#request_claim"
+      post "/crimson-server-list/servers/:server_id/report" => "crimson_server_list/reports#create"
       put "/crimson-server-list/servers/:id/review" => "crimson_server_list/servers#upsert_review"
       delete "/crimson-server-list/servers/:id/review" => "crimson_server_list/servers#destroy_review"
+      get "/crimson-server-list/admin/reports" => "crimson_server_list/reports#index"
+      put "/crimson-server-list/admin/reports/:id" => "crimson_server_list/reports#update"
       put "/crimson-server-list/admin/servers/:id" => "crimson_server_list/servers#update"
       put "/crimson-server-list/admin/claims/:id" => "crimson_server_list/servers#review_claim"
     end
