@@ -17,6 +17,8 @@ tr_TR:
     crimson_server_list_verification_enabled: "İlan sahiplerinin DNS TXT kaydı ile alan adı kontrolünü doğrulamasına izin ver."
     crimson_server_list_verification_challenge_hours: "DNS TXT doğrulama isteğinin kaç saat geçerli kalacağını belirler."
     crimson_server_list_reports_enabled: "Oturum açmış üyelerin yayındaki sunucu ilanlarını yönetici incelemesi için raporlamasına izin ver."
+    crimson_server_list_uptime_history_enabled: "Yayınlanan ve izlenen sunucular için sınırlı çalışma süresi geçmişini kaydet ve göster."
+    crimson_server_list_uptime_history_retention_days: "10 dakikalık çalışma süresi örneklerinin kaç gün saklanacağını belirler (7–90)."
   crimson_server_list:
     statuses:
       unknown: "Doğrulanmadı"
