@@ -16,6 +16,7 @@ tr_TR:
     crimson_server_list_reviews_limit: "Sunucu tanıtımında gösterilecek en fazla değerlendirme sayısı."
     crimson_server_list_verification_enabled: "İlan sahiplerinin DNS TXT kaydı ile alan adı kontrolünü doğrulamasına izin ver."
     crimson_server_list_verification_challenge_hours: "DNS TXT doğrulama isteğinin kaç saat geçerli kalacağını belirler."
+    crimson_server_list_reports_enabled: "Oturum açmış üyelerin yayındaki sunucu ilanlarını yönetici incelemesi için raporlamasına izin ver."
   crimson_server_list:
     statuses:
       unknown: "Doğrulanmadı"
@@ -36,6 +37,9 @@ tr_TR:
       claim_rejected: "Sahiplik talebi reddedildi."
       verification_started: "DNS doğrulama kaydı oluşturuldu. TXT kaydını ekledikten sonra doğrulamayı kontrol et."
       verification_succeeded: "Sunucu sahipliği DNS üzerinden doğrulandı."
+      report_submitted: "Raporun yönetici incelemesine gönderildi."
+      report_resolved: "Sunucu raporu çözüldü olarak işaretlendi."
+      report_dismissed: "Sunucu raporu reddedildi."
     errors:
       submissions_disabled: "Sunucu başvuruları şu anda kapalı."
       votes_disabled: "Sunucu oylaması şu anda kapalı."
@@ -54,3 +58,9 @@ tr_TR:
       verification_failed: "Beklenen DNS TXT kaydı henüz bulunamadı."
       verification_lookup_failed: "DNS doğrulama sorgusu tamamlanamadı. Daha sonra yeniden dene."
       verification_rate_limited: "Doğrulama kısa süre önce kontrol edildi. Yeniden denemeden önce biraz bekle."
+      reports_disabled: "Sunucu raporlama sistemi şu anda kapalı."
+      report_own_server: "Kendi sunucu ilanını raporlayamazsın."
+      report_pending: "Bu sunucu için bekleyen bir raporun zaten var."
+      report_rate_limited: "Kısa süre önce bir rapor gönderdin. Yeniden denemeden önce biraz bekle."
+      invalid_report_decision: "Geçersiz sunucu raporu kararı."
+      report_already_reviewed: "Bu sunucu raporu daha önce sonuçlandırılmış."
