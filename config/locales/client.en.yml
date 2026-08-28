@@ -1,0 +1,26 @@
+en:
+  js:
+    crimson_server_list:
+      verification:
+        badge: "Verified"
+        badge_title: "This listing owner proved control of the server hostname through DNS."
+        eyebrow: "VERIFIED SERVER"
+        title: "Verify server ownership"
+        verified_title: "Hostname ownership verified"
+        verified_description: "The listing owner proved control of this server hostname with a DNS TXT record."
+        intro: "Prove that you control the server hostname by adding a temporary DNS TXT record."
+        unavailable: "Server verification is disabled by the site administrator."
+        ineligible: "Automatic verification requires a public hostname. Direct IP addresses cannot be verified with DNS TXT."
+        loading: "Loading verification status…"
+        start: "Create DNS challenge"
+        restart: "Create a new challenge"
+        check: "Check DNS"
+        checking: "Checking DNS…"
+        record_type: "Type"
+        record_name: "Name / Host"
+        record_value: "Value"
+        expires: "Expires"
+        copy: "Copy value"
+        copied: "DNS TXT value copied."
+        pending: "DNS challenge is active. Add the TXT record, wait for DNS propagation, then check it."
+        secret_lost: "For security, the TXT value is shown only when a challenge is created. If you no longer have it, create a new challenge."
