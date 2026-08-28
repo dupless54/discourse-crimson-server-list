@@ -21,6 +21,7 @@ RSpec.describe Jobs::CrimsonServerListProbe do
     SiteSetting.crimson_server_list_enabled = true
     SiteSetting.crimson_server_list_live_query_enabled = true
     SiteSetting.crimson_server_list_uptime_history_enabled = true
+    SiteSetting.crimson_server_list_follows_enabled = true
     allow(CrimsonServerList::ProbeService).to receive(:write_cache)
   end
 
@@ -55,5 +56,69 @@ RSpec.describe Jobs::CrimsonServerListProbe do
     expect(sample.supports_player_count).to eq(false)
     expect(sample.players_online).to be_nil
     expect(sample.players_max).to be_nil
+  end
+
+  it "enqueues follower delivery only when an offline server comes back online" do
+    server.update_columns(status: "offline")
+    result =
+      CrimsonServerList::ProbeResult.new(
+        status: "online",
+        players_online: 0,
+        players_max: 0,
+        adapter: "minecraft-java",
+        supports_player_count: true,
+      )
+    allow(CrimsonServerList::ProbeService).to receive(:call).and_return([result, 20])
+    allow(Jobs).to receive(:enqueue)
+
+    described_class.new.execute(server_id: server.id, force: true)
+
+    expect(Jobs).to have_received(:enqueue).with(
+      :crimson_server_list_follow_notification,
+      hash_including(server_id: server.id, event: "back_online"),
+    ).once
+  end
+
+  it "does not enqueue follower delivery for unknown-to-online probes" do
+    result =
+      CrimsonServerList::ProbeResult.new(
+        status: "online",
+        players_online: 0,
+        players_max: 0,
+        adapter: "minecraft-java",
+        supports_player_count: true,
+      )
+    allow(CrimsonServerList::ProbeService).to receive(:call).and_return([result, 20])
+    allow(Jobs).to receive(:enqueue)
+
+    described_class.new.execute(server_id: server.id, force: true)
+
+    expect(Jobs).not_to have_received(:enqueue).with(
+      :crimson_server_list_follow_notification,
+      anything,
+    )
+  end
+
+  it "keeps the successful probe state when notification enqueue fails" do
+    server.update_columns(status: "offline")
+    result =
+      CrimsonServerList::ProbeResult.new(
+        status: "online",
+        players_online: 2,
+        players_max: 10,
+        adapter: "minecraft-java",
+        supports_player_count: true,
+      )
+    allow(CrimsonServerList::ProbeService).to receive(:call).and_return([result, 22])
+    allow(Jobs).to receive(:enqueue).and_raise(StandardError, "queue unavailable")
+    allow(Rails.logger).to receive(:warn)
+
+    described_class.new.execute(server_id: server.id, force: true)
+
+    expect(server.reload.status).to eq("online")
+    expect(server.players_online).to eq(2)
+    expect(Rails.logger).to have_received(:warn).with(
+      a_string_including("follow notification enqueue failed"),
+    )
   end
 end
