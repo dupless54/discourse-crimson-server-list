@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
-# version: 2.5.1
+# version: 2.6.0
 # authors: dupless54
 # url: https://senin.me/servers
 # required_version: 3.3.0
@@ -110,12 +110,14 @@ after_initialize do
   require_relative "app/models/crimson_server_list/claim_request"
   require_relative "app/models/crimson_server_list/report"
   require_relative "app/models/crimson_server_list/uptime_sample"
+  require_relative "app/models/crimson_server_list/follow"
   require_relative "lib/crimson_server_list/uptime_history"
   require_relative "app/controllers/crimson_server_list/servers_controller"
   require_relative "lib/crimson_server_list/anti_abuse"
   require_relative "app/controllers/crimson_server_list/verifications_controller"
   require_relative "app/controllers/crimson_server_list/reports_controller"
   require_relative "app/controllers/crimson_server_list/uptime_controller"
+  require_relative "app/controllers/crimson_server_list/follows_controller"
   require_relative "app/jobs/regular/crimson_server_list_probe"
   require_relative "app/jobs/scheduled/crimson_server_list_refresh"
   require_relative "app/jobs/scheduled/crimson_server_list_uptime_cleanup"
@@ -132,6 +134,10 @@ after_initialize do
     defaults format: :json do
       get "/crimson-server-list" => "crimson_server_list/servers#index"
       get "/crimson-server-list/verifications" => "crimson_server_list/verifications#index"
+      get "/crimson-server-list/me/follows" => "crimson_server_list/follows#index"
+      get "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#show"
+      put "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#update"
+      delete "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#destroy"
       get "/crimson-server-list/servers/:id/verification" => "crimson_server_list/verifications#show"
       post "/crimson-server-list/servers/:id/verification" => "crimson_server_list/verifications#start"
       post "/crimson-server-list/servers/:id/verification/check" => "crimson_server_list/verifications#check"
