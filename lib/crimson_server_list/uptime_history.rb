@@ -26,7 +26,7 @@ module ::CrimsonServerList
 
       supports_player_count = !!supports_player_count
       normalized_status = status.to_s
-      normalized_status = "unknown" unless CrimsonServerList::Server::STATUSES.include?(normalized_status)
+      normalized_status = "unknown" if CrimsonServerList::Server::STATUSES.exclude?(normalized_status)
       attributes = {
         server_id: server.id,
         sampled_at: bucket_time(checked_at),
