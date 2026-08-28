@@ -6,6 +6,7 @@ import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { eq } from "discourse/truth-helpers";
+import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
 export default class CrimsonServerList extends Component {
   @tracked servers = this.args.model?.servers || [];
@@ -760,7 +761,10 @@ export default class CrimsonServerList extends Component {
             <div class="csl-server-card__body">
               <header>
                 <div>
-                  <h2><a href={{server.detail_url}}>{{server.name}}</a></h2>
+                  <div class="csl-server-card__title-row">
+                    <h2><a href={{server.detail_url}}>{{server.name}}</a></h2>
+                    <CrimsonVerifiedBadge @server={{server}} />
+                  </div>
                   <p>{{server.short_description}}</p>
                 </div>
                 {{#if server.featured}}<span class="csl-featured">ÖNE ÇIKAN</span>{{/if}}
