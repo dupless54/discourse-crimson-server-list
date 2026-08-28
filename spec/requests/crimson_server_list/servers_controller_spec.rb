@@ -45,10 +45,18 @@ RSpec.describe CrimsonServerList::ServersController do
     server
   end
 
-  def expect_route(path, method:, action:)
+  def expect_route(path, method:, action:, id: nil)
     route = Rails.application.routes.recognize_path(path, method: method)
     expect(route[:controller]).to eq("crimson_server_list/servers")
     expect(route[:action]).to eq(action)
+    expect(route[:id]).to eq(id.to_s) if id
+    expect(route[:format]).to eq("json")
+  end
+
+  def expect_status(status)
+    expect(response.status).to eq(status),
+                               "response=#{response.body.inspect}; path=#{request.path.inspect}; " \
+                                 "path_parameters=#{request.path_parameters.inspect}"
   end
 
   describe "POST /crimson-server-list/servers" do
@@ -57,7 +65,7 @@ RSpec.describe CrimsonServerList::ServersController do
         post "/crimson-server-list/servers.json", params: server_attributes
       end.not_to change(CrimsonServerList::Server, :count)
 
-      expect(response.status).to eq(403)
+      expect_status(403)
     end
 
     it "derives ownership and approval state on the server" do
@@ -68,7 +76,7 @@ RSpec.describe CrimsonServerList::ServersController do
              params: server_attributes.merge(owner_id: owner.id, approved: true)
       end.to change(CrimsonServerList::Server, :count).by(1)
 
-      expect(response.status).to eq(201)
+      expect_status(201)
       server = CrimsonServerList::Server.order(:id).last
       expect(server.owner_id).to eq(member.id)
       expect(server.approved).to eq(false)
@@ -82,7 +90,7 @@ RSpec.describe CrimsonServerList::ServersController do
 
       put "/crimson-server-list/servers/#{server.id}.json", params: { name: "Hijacked" }
 
-      expect(response.status).to eq(403)
+      expect_status(403)
       expect(server.reload.name).to eq("Crimson Published Server")
     end
   end
@@ -91,14 +99,14 @@ RSpec.describe CrimsonServerList::ServersController do
     it "allows only one vote per user and calendar day" do
       server = create_server(owner: owner)
       path = "/crimson-server-list/servers/#{server.id}/vote.json"
-      expect_route(path, method: :post, action: "vote")
+      expect_route(path, method: :post, action: "vote", id: server.id)
       sign_in(member)
 
       post path
-      expect(response.status).to eq(200)
+      expect_status(200)
 
       post path
-      expect(response.status).to eq(422)
+      expect_status(422)
 
       expect(
         CrimsonServerList::Vote.where(
@@ -115,14 +123,14 @@ RSpec.describe CrimsonServerList::ServersController do
     it "updates the member's existing review instead of creating duplicates" do
       server = create_server(owner: owner)
       path = "/crimson-server-list/servers/#{server.id}/review.json"
-      expect_route(path, method: :put, action: "upsert_review")
+      expect_route(path, method: :put, action: "upsert_review", id: server.id)
       sign_in(member)
 
       put path, params: { rating: 5, body: "Excellent community." }
-      expect(response.status).to eq(200)
+      expect_status(200)
 
       put path, params: { rating: 3, body: "Updated after another visit." }
-      expect(response.status).to eq(200)
+      expect_status(200)
 
       reviews = CrimsonServerList::Review.where(server_id: server.id, user_id: member.id)
       expect(reviews.count).to eq(1)
@@ -137,26 +145,26 @@ RSpec.describe CrimsonServerList::ServersController do
     it "keeps ownership unchanged until an admin approves the claim" do
       server = create_server(owner: owner)
       path = "/crimson-server-list/servers/#{server.id}/claim.json"
-      expect_route(path, method: :post, action: "request_claim")
+      expect_route(path, method: :post, action: "request_claim", id: server.id)
       sign_in(claimant)
 
       post path, params: { note: "I run this server." }
 
-      expect(response.status).to eq(201)
+      expect_status(201)
       claim = CrimsonServerList::ClaimRequest.find_by!(server_id: server.id, requester_id: claimant.id)
       expect(claim.status).to eq("pending")
       expect(server.reload.owner_id).to eq(owner.id)
 
       sign_in(member)
       put "/crimson-server-list/admin/claims/#{claim.id}.json", params: { status: "approved" }
-      expect(response.status).to eq(403)
+      expect_status(403)
       expect(server.reload.owner_id).to eq(owner.id)
       expect(claim.reload.status).to eq("pending")
 
       sign_in(admin)
       put "/crimson-server-list/admin/claims/#{claim.id}.json", params: { status: "approved" }
 
-      expect(response.status).to eq(200)
+      expect_status(200)
       expect(server.reload.owner_id).to eq(claimant.id)
       expect(claim.reload.status).to eq("approved")
       expect(claim.reviewed_by_id).to eq(admin.id)
