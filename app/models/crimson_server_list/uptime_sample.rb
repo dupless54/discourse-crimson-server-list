@@ -57,3 +57,7 @@ end
 #  idx_crimson_uptime_server_sample                   (server_id,sampled_at) UNIQUE
 #  index_crimson_server_uptime_samples_on_sampled_at  (sampled_at)
 #
+# Foreign Keys
+#
+#  fk_rails_...  (server_id => crimson_game_servers.id) ON DELETE => cascade
+#
