@@ -81,6 +81,34 @@ RSpec.describe CrimsonServerList::ServersController do
       expect(server.owner_id).to eq(member.id)
       expect(server.approved).to eq(false)
     end
+
+    it "returns 429 without creating a server when the submission limiter denies the request" do
+      sign_in(member)
+      limiter = instance_double(RateLimiter)
+      allow(limiter).to receive(:performed!).with(raise_error: false).and_return(false)
+      allow(RateLimiter).to receive(:new).and_return(limiter)
+
+      expect do
+        post "/crimson-server-list/servers.json", params: server_attributes
+      end.not_to change(CrimsonServerList::Server, :count)
+
+      expect_status(429)
+      expect(response.parsed_body["errors"]).to include(
+        I18n.t("crimson_server_list.errors.submission_rate_limited"),
+      )
+    end
+
+    it "rolls back a consumed limiter slot when validation rejects the submission" do
+      sign_in(member)
+      limiter = instance_double(RateLimiter)
+      allow(limiter).to receive(:performed!).with(raise_error: false).and_return(true)
+      expect(limiter).to receive(:rollback!).once
+      allow(RateLimiter).to receive(:new).and_return(limiter)
+
+      post "/crimson-server-list/servers.json", params: server_attributes(name: "")
+
+      expect_status(422)
+    end
   end
 
   describe "PUT /crimson-server-list/servers/:id" do
@@ -92,6 +120,25 @@ RSpec.describe CrimsonServerList::ServersController do
 
       expect_status(403)
       expect(server.reload.name).to eq("Crimson Published Server")
+    end
+  end
+
+  describe "GET /crimson-server-list/servers/:slug" do
+    it "hides vote and review actions from the listing owner but not other members" do
+      server = create_server(owner: owner)
+      path = "/crimson-server-list/servers/#{server.slug}.json"
+
+      sign_in(owner)
+      get path
+      expect_status(200)
+      expect(response.parsed_body.dig("viewer", "can_vote")).to eq(false)
+      expect(response.parsed_body.dig("viewer", "can_review")).to eq(false)
+
+      sign_in(member)
+      get path
+      expect_status(200)
+      expect(response.parsed_body.dig("viewer", "can_vote")).to eq(true)
+      expect(response.parsed_body.dig("viewer", "can_review")).to eq(true)
     end
   end
 
@@ -117,6 +164,18 @@ RSpec.describe CrimsonServerList::ServersController do
       ).to eq(1)
       expect(server.reload.vote_count).to eq(1)
     end
+
+    it "does not let a listing owner vote for their own server" do
+      server = create_server(owner: owner)
+      sign_in(owner)
+
+      expect do
+        post "/crimson-server-list/servers/#{server.id}/vote.json"
+      end.not_to change(CrimsonServerList::Vote, :count)
+
+      expect_status(422)
+      expect(server.reload.vote_count).to eq(0)
+    end
   end
 
   describe "PUT /crimson-server-list/servers/:id/review" do
@@ -138,6 +197,20 @@ RSpec.describe CrimsonServerList::ServersController do
       expect(reviews.first.body).to eq("Updated after another visit.")
       expect(server.reload.review_count).to eq(1)
       expect(server.rating_sum).to eq(3)
+    end
+
+    it "does not let a listing owner review their own server" do
+      server = create_server(owner: owner)
+      sign_in(owner)
+
+      expect do
+        put "/crimson-server-list/servers/#{server.id}/review.json",
+            params: { rating: 5, body: "Self promotion" }
+      end.not_to change(CrimsonServerList::Review, :count)
+
+      expect_status(422)
+      expect(server.reload.review_count).to eq(0)
+      expect(server.rating_sum).to eq(0)
     end
   end
 
