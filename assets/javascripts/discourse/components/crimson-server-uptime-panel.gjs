@@ -19,7 +19,7 @@ export default class CrimsonServerUptimePanel extends Component {
   constructor() {
     super(...arguments);
 
-    if (this.isEnabled && this.server.id) {
+    if (this.isAvailable && this.server.id) {
       void this.loadHistory();
     }
   }
@@ -28,8 +28,12 @@ export default class CrimsonServerUptimePanel extends Component {
     return this.args.model?.server || {};
   }
 
-  get isEnabled() {
-    return Boolean(this.siteSettings.crimson_server_list_uptime_history_enabled);
+  get isAvailable() {
+    return Boolean(
+      this.siteSettings.crimson_server_list_uptime_history_enabled &&
+        this.server.approved &&
+        this.server.enabled,
+    );
   }
 
   get ranges() {
@@ -66,6 +70,13 @@ export default class CrimsonServerUptimePanel extends Component {
     });
   }
 
+  get series() {
+    return (this.history?.series || []).map((point) => ({
+      ...point,
+      label: this.pointLabel(point),
+    }));
+  }
+
   statusLabel(status) {
     return i18n(`crimson_server_list.uptime.status_${status || "unknown"}`);
   }
@@ -93,9 +104,10 @@ export default class CrimsonServerUptimePanel extends Component {
     this.errorMessage = "";
 
     try {
-      this.history = await ajax(
+      const response = await ajax(
         `/crimson-server-list/servers/${this.server.id}/uptime.json?range=${this.selectedRange}`,
       );
+      this.history = response.uptime || null;
     } catch (error) {
       this.history = null;
       this.errorMessage =
@@ -108,7 +120,7 @@ export default class CrimsonServerUptimePanel extends Component {
   }
 
   <template>
-    {{#if this.isEnabled}}
+    {{#if this.isAvailable}}
       <section class="csl-panel csl-uptime-panel" aria-labelledby="csl-uptime-title">
         <header class="csl-uptime-panel__header">
           <div>
@@ -153,10 +165,10 @@ export default class CrimsonServerUptimePanel extends Component {
           {{/unless}}
 
           <div class="csl-uptime-timeline" role="img" aria-label={{this.timelineLabel}}>
-            {{#each this.history.series as |point|}}
+            {{#each this.series as |point|}}
               <span
                 class="csl-uptime-point csl-uptime-point--{{point.status}}"
-                title={{this.pointLabel point}}
+                title={{point.label}}
                 aria-hidden="true"
               ></span>
             {{/each}}
