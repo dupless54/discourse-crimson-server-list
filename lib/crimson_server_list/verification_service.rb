@@ -5,6 +5,7 @@ require "digest"
 require "ipaddr"
 require "resolv"
 require "securerandom"
+require "timeout"
 
 module ::CrimsonServerList
   class VerificationService
