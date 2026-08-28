@@ -25,10 +25,12 @@ module ::CrimsonServerList
       return unless SiteSetting.crimson_server_list_uptime_history_enabled
 
       supports_player_count = !!supports_player_count
+      normalized_status = status.to_s
+      normalized_status = "unknown" unless CrimsonServerList::Server::STATUSES.include?(normalized_status)
       attributes = {
         server_id: server.id,
         sampled_at: bucket_time(checked_at),
-        status: status.to_s,
+        status: normalized_status,
         response_ms: normalized_nonnegative(response_ms),
         supports_player_count: supports_player_count,
         players_online:
@@ -92,10 +94,11 @@ module ::CrimsonServerList
     def compact_series(samples)
       return samples.map { |sample| serialize_sample(sample) } if samples.length <= MAX_SERIES_POINTS
 
-      stride = (samples.length.to_f / MAX_SERIES_POINTS).ceil
-      selected = samples.each_with_index.filter_map { |sample, index| sample if (index % stride).zero? }
-      selected << samples.last unless selected.last&.id == samples.last&.id
-      selected.map { |sample| serialize_sample(sample) }
+      last_index = samples.length - 1
+      step = last_index.to_f / (MAX_SERIES_POINTS - 1)
+      Array.new(MAX_SERIES_POINTS) do |index|
+        serialize_sample(samples[(index * step).round])
+      end
     end
 
     def serialize_sample(sample)
