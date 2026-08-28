@@ -167,15 +167,16 @@ RSpec.describe CrimsonServerList::FollowsController do
   end
 
   it "enforces the per-user saved-server cap before creating another row" do
-    stub_const("CrimsonServerList::FollowsController::MAX_FOLLOWS_PER_USER", 1)
     existing_server = create_server(name: "Existing Favorite")
     another_server = create_server(name: "Favorite Over Limit")
     CrimsonServerList::Follow.create!(server: existing_server, user: member)
     sign_in(member)
 
-    put follow_path(another_server)
+    stub_const(CrimsonServerList::FollowsController, :MAX_FOLLOWS_PER_USER, 1) do
+      put follow_path(another_server)
 
-    expect(response.status).to eq(422)
-    expect(CrimsonServerList::Follow.where(user: member).count).to eq(1)
+      expect(response.status).to eq(422)
+      expect(CrimsonServerList::Follow.where(user: member).count).to eq(1)
+    end
   end
 end
