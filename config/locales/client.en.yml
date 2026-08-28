@@ -96,3 +96,6 @@ en:
         status_offline: "Offline"
         status_unknown: "Unknown"
         status_maintenance: "Maintenance"
+      notifications:
+        back_online_label: "Back online"
+        back_online_title: "%{server} is back online"
