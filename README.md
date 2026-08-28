@@ -1,9 +1,29 @@
 # discourse-crimson-server-list
 
-Sürüm: **2.2.2**
+Sürüm: **2.4.1**
 
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.4.1 anti-abuse iyileştirmeleri
+
+- Sunucu sahibi kendi ilanına oy veremez ve kendi ilanını yıldız/yorum ile değerlendiremez; kontrol backend seviyesinde uygulanır.
+- İlan sahibi detay JSON'unda oy ve değerlendirme aksiyonları kapalı döner; istemci yalnız bu server-authoritative durumu gösterir.
+- Normal üyeler için Discourse `RateLimiter` tabanlı korumalar eklendi: günde 5 yeni sunucu başvurusu, günde 100 sunucu oyu, saatte 30 değerlendirme yazımı/güncellemesi ve günde 10 sahiplik talebi.
+- Staff hesapları Discourse'un varsayılan rate-limit muafiyetini korur.
+- Validation, duplicate oy veya mevcut pending claim nedeniyle reddedilen istekler limiter kotasını tüketmez.
+- Anti-abuse hata yanıtları İngilizce ve Türkçe yerelleştirildi.
+
+## 2.4.0 güven ve moderasyon
+
+- Sunucu sahibi DNS TXT challenge ile alan adı kontrolünü kanıtlayabilir; plaintext challenge veritabanında saklanmaz, yalnız SHA-256 digest tutulur.
+- Doğrulanmış sunucular liste ve detay sayfasında native Discourse uyumlu bir rozetle gösterilir.
+- Host veya sahip değiştiğinde doğrulama otomatik olarak iptal edilir.
+- Üyeler yayındaki sunucu ilanlarını sınırlı nedenlerle yönetici incelemesine raporlayabilir.
+- Aynı kullanıcı ve sunucu için ikinci pending rapor DB seviyesinde engellenir; rapor oluşturma işlemleri kullanıcı ve sunucu bazında rate-limit edilir.
+- Reporter kimliği ve rapor metni normal public server serializer'ına eklenmez.
+- Yalnız admin pending rapor kuyruğunu görebilir ve raporu `resolved` veya `dismissed` olarak sonuçlandırabilir; rapor sayısı sunucuyu otomatik olarak kapatmaz veya silmez.
+- Reporting UI ve Verified Server UI gerçek Discourse Ember Build + Plugin QUnit kapısından geçecek frontend testleriyle kapsanır.
 
 ## 2.2.2 iyileştirmeleri
 
@@ -126,12 +146,13 @@ kayıtları korunur.
 - Günlük oylar: `crimson_server_votes`
 - Yorum ve yıldızlar: `crimson_server_reviews`
 - Sahiplik talepleri: `crimson_server_claim_requests`
+- Sunucu raporları: `crimson_server_reports`
 - Sunucu etiketleri: `crimson_game_servers.tags` JSONB alanı ve GIN indeksi
 - Başvuru, oy, yorum, elle yenileme ve sahip düzenlemesi oturum gerektirir.
 - Bir kullanıcı aynı sunucuya yalnızca bir değerlendirme bırakabilir; yeniden
   gönderdiğinde mevcut değerlendirmesi güncellenir.
-- Sunucu sahibi yalnızca kendi kaydını düzenleyebilir; yönetici bütün kayıtları
-  yönetebilir.
+- Sunucu sahibi yalnızca kendi kaydını düzenleyebilir; kendi ilanına oy veremez
+  veya değerlendirme bırakamaz; yönetici bütün kayıtları yönetebilir.
 - Yönetici ve moderatörler ilan silebilir; sahiplik aktarımını yalnızca yönetici
   onaylayabilir.
 - Görüntülenme sayacı, oturum açmış hesap veya anonim tarayıcı parmak izi için
@@ -160,3 +181,6 @@ kayıtları korunur.
 - `crimson_server_list_reviews_enabled`
 - `crimson_server_list_owner_edits_require_approval`
 - `crimson_server_list_reviews_limit`
+- `crimson_server_list_verification_enabled`
+- `crimson_server_list_verification_challenge_hours`
+- `crimson_server_list_reports_enabled`
