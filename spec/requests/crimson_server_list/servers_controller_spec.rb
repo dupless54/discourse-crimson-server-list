@@ -86,7 +86,10 @@ RSpec.describe CrimsonServerList::ServersController do
       sign_in(member)
       limiter = instance_double(RateLimiter)
       allow(limiter).to receive(:performed!).with(raise_error: false).and_return(false)
-      allow(RateLimiter).to receive(:new).and_return(limiter)
+      allow(RateLimiter).to receive(:new).and_call_original
+      allow(RateLimiter).to receive(:new)
+        .with(member, "crimson-server-list-submission", 5, 1.day)
+        .and_return(limiter)
 
       expect do
         post "/crimson-server-list/servers.json", params: server_attributes
@@ -103,7 +106,10 @@ RSpec.describe CrimsonServerList::ServersController do
       limiter = instance_double(RateLimiter)
       allow(limiter).to receive(:performed!).with(raise_error: false).and_return(true)
       allow(limiter).to receive(:rollback!)
-      allow(RateLimiter).to receive(:new).and_return(limiter)
+      allow(RateLimiter).to receive(:new).and_call_original
+      allow(RateLimiter).to receive(:new)
+        .with(member, "crimson-server-list-submission", 5, 1.day)
+        .and_return(limiter)
 
       post "/crimson-server-list/servers.json", params: server_attributes(name: "")
 
