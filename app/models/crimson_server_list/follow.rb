@@ -24,7 +24,7 @@ end
 #
 # Indexes
 #
-#  idx_crimson_server_follow_user                         (server_id,user_id) UNIQUE
+#  idx_crimson_server_follow_user                          (server_id,user_id) UNIQUE
 #  index_crimson_server_follows_on_user_id_and_updated_at  (user_id,updated_at)
 #
 # Foreign Keys
