@@ -1,6 +1,8 @@
 import Component from "@glimmer/component";
-import { service } from "@ember/service";
+import { fn } from "@ember/helper";
 import { action } from "@ember/object";
+import { on } from "@ember/modifier";
+import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
