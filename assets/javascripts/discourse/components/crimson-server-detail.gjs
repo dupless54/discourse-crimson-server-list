@@ -5,6 +5,8 @@ import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import CrimsonServerVerificationPanel from "./crimson-server-verification-panel";
+import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
 export default class CrimsonServerDetail extends Component {
   @tracked server = this.args.model?.server || {};
@@ -99,6 +101,16 @@ export default class CrimsonServerDetail extends Component {
   }
 
   @action
+  applyVerification(verification) {
+    this.server = {
+      ...this.server,
+      verified: Boolean(verification?.verified),
+      verified_at: verification?.verified_at || null,
+      verification_method: verification?.verification_method || null,
+    };
+  }
+
+  @action
   async copyAddress() {
     try {
       await navigator.clipboard.writeText(this.server.address);
@@ -168,6 +180,7 @@ export default class CrimsonServerDetail extends Component {
     const form = event.currentTarget;
     const data = this.serverFormData(form);
     const previousSlug = this.server.slug;
+    const previousHost = this.server.host;
 
     this.busyAction = "edit";
     this.clearMessages();
@@ -184,6 +197,8 @@ export default class CrimsonServerDetail extends Component {
 
       if (response.server.slug !== previousSlug) {
         window.location.assign(response.server.detail_url);
+      } else if (response.server.host !== previousHost) {
+        window.location.reload();
       }
     } catch (error) {
       this.errorMessage = this.errorText(error);
@@ -349,7 +364,10 @@ export default class CrimsonServerDetail extends Component {
           <div class="csl-detail-hero__shade"></div>
           <div class="csl-detail-hero__content">
             <a class="csl-eyebrow csl-category-link" href={{this.server.game.category_url}}>{{this.server.game.icon}} {{this.server.game.name}}</a>
-            <h1>{{this.server.name}}</h1>
+            <div class="csl-title-row">
+              <h1>{{this.server.name}}</h1>
+              <CrimsonVerifiedBadge @server={{this.server}} />
+            </div>
             <p>{{this.server.short_description}}</p>
 
             <div class="csl-meta">
@@ -458,6 +476,14 @@ export default class CrimsonServerDetail extends Component {
 
         {{#if this.announcement}}<p class="csl-notice csl-notice--success" role="status">{{this.announcement}}</p>{{/if}}
         {{#if this.errorMessage}}<p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>{{/if}}
+
+        {{#if this.viewer.can_edit}}
+          <CrimsonServerVerificationPanel
+            @server={{this.server}}
+            @viewer={{this.viewer}}
+            @onStateChange={{this.applyVerification}}
+          />
+        {{/if}}
 
         {{#if this.showEdit}}
           <section class="csl-panel csl-detail-edit" aria-labelledby="csl-edit-title">
