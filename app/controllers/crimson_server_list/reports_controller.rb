@@ -4,6 +4,8 @@ module ::CrimsonServerList
   class ReportsController < ::ApplicationController
     requires_plugin CrimsonServerList::PLUGIN_NAME
 
+    MAX_REPORTS_PER_HOUR = 10
+
     before_action :ensure_plugin_enabled
     before_action :ensure_logged_in, only: :create
     before_action :ensure_admin_user, only: %i[index update]
@@ -25,7 +27,13 @@ module ::CrimsonServerList
         return render_error(I18n.t("crimson_server_list.errors.report_pending"), :unprocessable_entity)
       end
 
-      return rate_limited unless acquire_throttle!(server)
+      RateLimiter.new(
+        current_user,
+        "crimson-server-list-report",
+        MAX_REPORTS_PER_HOUR,
+        1.hour,
+      ).performed!
+      return rate_limited unless acquire_server_throttle!(server)
 
       report =
         CrimsonServerList::Report.new(
@@ -112,7 +120,7 @@ module ::CrimsonServerList
       raise Discourse::InvalidAccess unless current_user&.admin?
     end
 
-    def acquire_throttle!(server)
+    def acquire_server_throttle!(server)
       key = "crimson-server-list:report:create:#{current_user.id}:#{server.id}"
       Discourse.redis.set(key, "1", nx: true, ex: 60)
     end
