@@ -16,6 +16,7 @@ en:
     crimson_server_list_reviews_limit: "Maximum number of reviews returned on a server detail page."
     crimson_server_list_verification_enabled: "Allow listing owners to prove control of a hostname with a DNS TXT challenge."
     crimson_server_list_verification_challenge_hours: "How many hours a DNS TXT verification challenge remains valid."
+    crimson_server_list_reports_enabled: "Allow signed-in members to report published server listings for administrator review."
   crimson_server_list:
     statuses:
       unknown: "Unverified"
@@ -36,6 +37,9 @@ en:
       claim_rejected: "The ownership claim was rejected."
       verification_started: "DNS verification challenge created. Add the TXT record, then check verification."
       verification_succeeded: "Server ownership was verified through DNS."
+      report_submitted: "Your report was sent to the administrators for review."
+      report_resolved: "The server report was marked as resolved."
+      report_dismissed: "The server report was dismissed."
     errors:
       submissions_disabled: "Server submissions are currently disabled."
       votes_disabled: "Server voting is currently disabled."
@@ -54,3 +58,9 @@ en:
       verification_failed: "The expected DNS TXT record was not found yet."
       verification_lookup_failed: "The DNS verification lookup could not be completed. Try again later."
       verification_rate_limited: "Verification was checked too recently. Please wait before trying again."
+      reports_disabled: "Server reporting is currently disabled."
+      report_own_server: "You cannot report your own server listing."
+      report_pending: "You already have a pending report for this server."
+      report_rate_limited: "A report was submitted too recently. Please wait before trying again."
+      invalid_report_decision: "Invalid server report decision."
+      report_already_reviewed: "This server report has already been reviewed."
