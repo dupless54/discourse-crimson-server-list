@@ -46,7 +46,7 @@ RSpec.describe CrimsonServerList::UptimeHistory do
     samples = CrimsonServerList::UptimeSample.where(server_id: server.id)
     expect(samples.count).to eq(1)
     sample = samples.first
-    expect(sample.sampled_at).to eq(Time.utc(2026, 8, 29, 10, 0, 0))
+    expect(sample.sampled_at).to eq_time(Time.utc(2026, 8, 29, 10, 0, 0))
     expect(sample.status).to eq("offline")
     expect(sample.players_online).to be_nil
     expect(sample.players_max).to be_nil
