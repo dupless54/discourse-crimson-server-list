@@ -69,14 +69,19 @@ RSpec.describe Jobs::CrimsonServerListProbe do
         supports_player_count: true,
       )
     allow(CrimsonServerList::ProbeService).to receive(:call).and_return([result, 20])
-    allow(Jobs).to receive(:enqueue)
+    enqueued = []
+    allow(Jobs).to receive(:enqueue) do |job_name, **args|
+      enqueued << [job_name, args]
+    end
 
     described_class.new.execute(server_id: server.id, force: true)
 
-    expect(Jobs).to have_received(:enqueue).with(
-      :crimson_server_list_follow_notification,
-      hash_including(server_id: server.id, event: "back_online"),
-    ).once
+    expect(enqueued.length).to eq(1)
+    job_name, args = enqueued.first
+    expect(job_name).to eq(:crimson_server_list_follow_notification)
+    expect(args[:server_id]).to eq(server.id)
+    expect(args[:event]).to eq("back_online")
+    expect(Time.zone.parse(args[:transition_at])).to be_present
   end
 
   it "does not enqueue follower delivery for unknown-to-online probes" do
