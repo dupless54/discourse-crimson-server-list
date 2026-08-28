@@ -65,7 +65,7 @@ end
 # Indexes
 #
 #  idx_crimson_report_pending_per_user                    (server_id,reporter_id) UNIQUE WHERE ((status)::text = 'pending'::text)
-#  index_crimson_server_reports_on_reporter_id             (reporter_id)
-#  index_crimson_server_reports_on_server_id_and_status    (server_id,status)
-#  index_crimson_server_reports_on_status_and_created_at   (status,created_at)
+#  index_crimson_server_reports_on_reporter_id            (reporter_id)
+#  index_crimson_server_reports_on_server_id_and_status   (server_id,status)
+#  index_crimson_server_reports_on_status_and_created_at  (status,created_at)
 #
