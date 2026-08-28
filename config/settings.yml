@@ -51,3 +51,10 @@ plugins:
   crimson_server_list_reports_enabled:
     default: true
     client: true
+  crimson_server_list_uptime_history_enabled:
+    default: true
+    client: true
+  crimson_server_list_uptime_history_retention_days:
+    default: 30
+    min: 7
+    max: 90
