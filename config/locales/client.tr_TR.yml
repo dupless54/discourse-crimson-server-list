@@ -1,0 +1,26 @@
+tr_TR:
+  js:
+    crimson_server_list:
+      verification:
+        badge: "Doğrulanmış"
+        badge_title: "Bu ilanın sahibi, sunucu alan adını DNS üzerinden kontrol ettiğini kanıtladı."
+        eyebrow: "DOĞRULANMIŞ SUNUCU"
+        title: "Sunucu sahipliğini doğrula"
+        verified_title: "Alan adı sahipliği doğrulandı"
+        verified_description: "İlan sahibi, bu sunucu alan adını DNS TXT kaydı ile kontrol ettiğini kanıtladı."
+        intro: "Sunucu alan adını kontrol ettiğini geçici bir DNS TXT kaydı ekleyerek kanıtla."
+        unavailable: "Sunucu doğrulama sistemi site yöneticisi tarafından kapatılmış."
+        ineligible: "Otomatik doğrulama için genel internete açık bir alan adı gerekir. Doğrudan IP adresleri DNS TXT ile doğrulanamaz."
+        loading: "Doğrulama durumu yükleniyor…"
+        start: "DNS doğrulaması oluştur"
+        restart: "Yeni doğrulama oluştur"
+        check: "DNS'i kontrol et"
+        checking: "DNS kontrol ediliyor…"
+        record_type: "Tür"
+        record_name: "Ad / Host"
+        record_value: "Değer"
+        expires: "Son geçerlilik"
+        copy: "Değeri kopyala"
+        copied: "DNS TXT değeri kopyalandı."
+        pending: "DNS doğrulaması aktif. TXT kaydını ekle, DNS yayılımını bekle ve ardından kontrol et."
+        secret_lost: "Güvenlik nedeniyle TXT değeri yalnız doğrulama oluşturulduğu anda gösterilir. Değer artık sende yoksa yeni bir doğrulama oluştur."
