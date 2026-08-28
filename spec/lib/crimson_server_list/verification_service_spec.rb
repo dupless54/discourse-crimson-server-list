@@ -83,6 +83,20 @@ RSpec.describe CrimsonServerList::VerificationService do
     expect(described_class).not_to have_received(:lookup_txt_values)
   end
 
+  it "rejects a matching TXT result when the host changes during the lookup" do
+    server = create_server
+    challenge = described_class.start!(server)
+    allow(described_class).to receive(:lookup_txt_values) do
+      server.update!(host: "new.example.net")
+      [challenge[:record_value]]
+    end
+
+    expect { described_class.verify!(server.reload) }.to raise_error(
+      CrimsonServerList::VerificationService::ChallengeMissing,
+    )
+    expect(server.reload).not_to be_verified
+  end
+
   it "rejects IP literals for automatic verification" do
     server = create_server(host: "1.1.1.1")
 
