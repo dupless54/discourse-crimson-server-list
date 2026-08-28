@@ -15,12 +15,13 @@ end
 #
 # Table name: crimson_server_follows
 #
-#  id                    :bigint           not null, primary key
-#  notifications_enabled :boolean          default(FALSE), not null
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  server_id             :bigint           not null
-#  user_id               :integer          not null
+#  id                          :bigint           not null, primary key
+#  last_online_notification_at :datetime
+#  notifications_enabled       :boolean          default(FALSE), not null
+#  created_at                  :datetime         not null
+#  updated_at                  :datetime         not null
+#  server_id                   :bigint           not null
+#  user_id                     :integer          not null
 #
 # Indexes
 #
