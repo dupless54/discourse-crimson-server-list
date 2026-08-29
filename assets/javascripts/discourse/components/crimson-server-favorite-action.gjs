@@ -10,6 +10,7 @@ export default class CrimsonServerFavoriteAction extends Component {
   @service siteSettings;
 
   @tracked favorited = false;
+  @tracked notificationsEnabled = false;
   @tracked isLoading = false;
   @tracked isBusy = false;
   @tracked errorMessage = "";
@@ -47,6 +48,10 @@ export default class CrimsonServerFavoriteAction extends Component {
     return this.favorited ? "true" : "false";
   }
 
+  get notificationAriaPressed() {
+    return this.notificationsEnabled ? "true" : "false";
+  }
+
   get buttonLabel() {
     if (this.isBusy) {
       return i18n("crimson_server_list.favorites.saving");
@@ -59,6 +64,14 @@ export default class CrimsonServerFavoriteAction extends Component {
     );
   }
 
+  get notificationLabel() {
+    return i18n(
+      this.notificationsEnabled
+        ? "crimson_server_list.notifications.disable_back_online"
+        : "crimson_server_list.notifications.enable_back_online",
+    );
+  }
+
   async loadState() {
     this.isLoading = true;
     this.errorMessage = "";
@@ -68,6 +81,7 @@ export default class CrimsonServerFavoriteAction extends Component {
         `/crimson-server-list/servers/${this.server.id}/follow.json`,
       );
       this.favorited = Boolean(response.favorited);
+      this.notificationsEnabled = Boolean(response.notifications_enabled);
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
@@ -90,6 +104,33 @@ export default class CrimsonServerFavoriteAction extends Component {
         { type: this.favorited ? "DELETE" : "PUT" },
       );
       this.favorited = Boolean(response.favorited);
+      this.notificationsEnabled = Boolean(response.notifications_enabled);
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.isBusy = false;
+    }
+  }
+
+  @action
+  async toggleNotifications() {
+    if (this.isBusy || this.isLoading || !this.favorited) {
+      return;
+    }
+
+    this.isBusy = true;
+    this.errorMessage = "";
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${this.server.id}/follow.json`,
+        {
+          type: "PUT",
+          data: { notifications_enabled: !this.notificationsEnabled },
+        },
+      );
+      this.favorited = Boolean(response.favorited);
+      this.notificationsEnabled = Boolean(response.notifications_enabled);
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
@@ -114,19 +155,39 @@ export default class CrimsonServerFavoriteAction extends Component {
           <p>{{i18n "crimson_server_list.favorites.detail_description"}}</p>
         </div>
 
-        <button
-          class="csl-button csl-favorite-action__button {{if this.favorited "is-active" ""}}"
-          type="button"
-          disabled={{this.isDisabled}}
-          aria-pressed={{this.ariaPressed}}
-          {{on "click" this.toggleFavorite}}
-        >
-          {{#if this.isLoading}}
-            {{i18n "crimson_server_list.favorites.loading_state"}}
-          {{else}}
-            {{this.buttonLabel}}
+        <div class="csl-favorite-action__controls">
+          <button
+            class="csl-button csl-favorite-action__button {{if this.favorited "is-active" ""}}"
+            type="button"
+            disabled={{this.isDisabled}}
+            aria-pressed={{this.ariaPressed}}
+            {{on "click" this.toggleFavorite}}
+          >
+            {{#if this.isLoading}}
+              {{i18n "crimson_server_list.favorites.loading_state"}}
+            {{else}}
+              {{this.buttonLabel}}
+            {{/if}}
+          </button>
+
+          {{#if this.favorited}}
+            <div class="csl-notification-preference">
+              <div class="csl-notification-preference__copy">
+                <strong>{{i18n "crimson_server_list.notifications.preference_title"}}</strong>
+                <span>{{i18n "crimson_server_list.notifications.preference_description"}}</span>
+              </div>
+              <button
+                class="csl-button csl-notification-preference__button {{if this.notificationsEnabled "is-active" ""}}"
+                type="button"
+                disabled={{this.isDisabled}}
+                aria-pressed={{this.notificationAriaPressed}}
+                {{on "click" this.toggleNotifications}}
+              >
+                {{this.notificationLabel}}
+              </button>
+            </div>
           {{/if}}
-        </button>
+        </div>
 
         {{#if this.errorMessage}}
           <p class="csl-notice csl-notice--error csl-favorite-action__error" role="alert">{{this.errorMessage}}</p>

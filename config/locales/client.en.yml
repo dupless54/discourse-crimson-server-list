@@ -99,3 +99,10 @@ en:
       notifications:
         back_online_label: "Back online"
         back_online_title: "%{server} is back online"
+        preference_title: "Back-online notifications"
+        preference_description: "Get an in-app forum notification when this server is confirmed online after being offline."
+        preference_card: "Back-online forum notification"
+        enable_back_online: "Notify me when it is back online"
+        disable_back_online: "Stop back-online notifications"
+        enable_back_online_short: "Turn notification on"
+        disable_back_online_short: "Turn notification off"
