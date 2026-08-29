@@ -62,8 +62,7 @@ module ::CrimsonServerList
     end
 
     def normalized_tag
-      value = CrimsonServerList.normalize_tag(@params[:tag])
-      value if value.present?
+      CrimsonServerList.normalize_tag(@params[:tag]).presence
     end
 
     def normalized_status
