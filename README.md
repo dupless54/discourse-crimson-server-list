@@ -1,9 +1,28 @@
 # discourse-crimson-server-list
 
-Sürüm: **2.6.0**
+Sürüm: **2.8.0**
 
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.8.0 scalable discovery
+
+- `/servers` kataloğu artık ilk sınırlı bootstrap dilimini tarayıcıda filtrelemek yerine server-authoritative `/crimson-server-list/discovery.json` endpoint'ini kullanır.
+- Oyun, etiket, durum, doğrulanmış sunucu, arama ve sıralama filtreleri pagination uygulanmadan önce sunucuda çalışır; sayfa boyutu varsayılan 24, hard limit 50'dir.
+- Arama metni bounded tutulur, SQL wildcard karakterleri literal olarak escape edilir ve sıralama yalnız sabit whitelist üzerinden seçilir.
+- Discovery sonuçları deterministik tie-break sırası kullanır; istemci sonraki sayfaları duplicate sunucu ID üretmeden ekler ve eski/stale AJAX yanıtlarının yeni filtre sonucunu ezmesini engeller.
+- Public discovery serializer'ı host, bağlantı/sorgu portları ve probe/adapter diagnostic alanlarını ilan sahibi oturum açmış olsa bile katalog yanıtına eklemez.
+- `/servers` ilk yüklemesi metadata-only `/crimson-server-list/bootstrap.json` endpoint'ine taşındı; game/tag sayaçları, toplu istatistikler, viewer yetkileri ve admin moderasyon kuyrukları korunurken katalog kartları bootstrap payload'ından çıkarıldı.
+- Eski `/crimson-server-list.json` endpoint'i mevcut tüketiciler için geriye uyumlu bırakıldı.
+- Server-side request spec'leri ile Ember Build/Plugin QUnit; filtreleme, pagination, debounce, stale-response koruması, bootstrap geriye uyumluluğu ve UI entegrasyonunu kapsar.
+
+## 2.7.0 back-online bildirimleri
+
+- Favoriye alınmış sunucularda `notifications_enabled` tercihi detay sayfasından ve özel Favorilerim panelinden yönetilebilir.
+- Yalnız tercihi açık takipçiler, izlenen sunucu gerçek bir `back_online` geçişi yaptığında Discourse içi kalıcı bildirim alır.
+- Aynı geçiş job'ı yeniden çalışırsa duplicate bildirim üretilmez; sunucu job çalışana kadar yeniden offline olmuşsa stale bildirim bastırılır.
+- Büyük takipçi listeleri tek job içinde sınırsız fan-out yapmak yerine bounded batch'lerle devam ettirilir.
+- Bildirim tercihi ve teslimat durumu kullanıcıya özeldir; public katalog serializer'ına takipçi bilgisi veya toplamı eklenmez.
 
 ## 2.6.0 favorites / follow backend
 
