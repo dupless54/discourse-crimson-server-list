@@ -99,3 +99,10 @@ tr_TR:
       notifications:
         back_online_label: "Yeniden çevrimiçi"
         back_online_title: "%{server} yeniden çevrimiçi"
+        preference_title: "Yeniden çevrimiçi bildirimleri"
+        preference_description: "Bu sunucu çevrimdışı kaldıktan sonra tekrar çevrimiçi olduğu doğrulandığında forum içi bildirim al."
+        preference_card: "Yeniden çevrimiçi forum bildirimi"
+        enable_back_online: "Tekrar çevrimiçi olduğunda bildir"
+        disable_back_online: "Yeniden çevrimiçi bildirimlerini kapat"
+        enable_back_online_short: "Bildirimi aç"
+        disable_back_online_short: "Bildirimi kapat"
