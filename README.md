@@ -1,242 +1,125 @@
-# discourse-crimson-server-list
+<p align="center">
+  <a href="https://buymeacoffee.com/erespawn">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" width="217" height="60">
+  </a>
+</p>
 
-Sürüm: **2.9.0**
+# Discourse Crimson Server List
 
-Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
-onaylı, canlı durum destekli private oyun sunucusu top listesi.
+**Current release line: 2.9.0**
 
-## 2.9.0 owner panel
+A native Discourse game-server directory with moderated listings, server-authoritative discovery, live status checks, reviews, votes, ownership workflows, favorites, uptime history, and private owner-management tools.
 
-- Oturum açmış kullanıcılar `/servers` sayfasındaki **Sunucularım** panelinden sahip oldukları bütün ilanları tek yerde görebilir; panel kapalıyken private owner API çağrısı yapılmaz.
-- Private `GET /crimson-server-list/me/servers.json` endpoint'i her zaman `owner_id = current_user.id` ile scope edilir; yönetici hesabı bile bu `me` endpoint'inden başka kullanıcıların ilanlarını göremez.
-- Owner panel yayındaki, onay bekleyen ve devre dışı ilanları birlikte gösterir; toplam/yayında/bekleyen/devre dışı/çevrimiçi/doğrulanmış özetleri server-authoritative olarak döner.
-- İlan sahibi yönetim amacıyla kendi host/port ve mevcut probe tanı alanlarını görebilir; bu private alanlar public discovery serializer'ına eklenmez.
-- Yönetim durumu `publication_state`, `can_edit`, `can_refresh` ve `edit_requires_approval` alanlarıyla backend tarafından belirlenir; istemci ownership veya yetki tahmini yapmaz.
-- Owner listesi backend'de bounded pagination kullanır (varsayılan 24, hard limit 50); UI 12'lik sayfalarla lazy load eder, sonraki sayfalarda duplicate sunucu ID üretmez ve yeniden açıldığında gereksiz refetch yapmaz.
-- Panel yükleme, boş, hata/retry ve responsive mobil durumlarıyla EN/TR yerelleştirmeye sahiptir; gerçek düzenleme/yönetim yüzeyi mevcut sunucu detay sayfası olarak kalır.
-- Request spec'leri ile Ember Build/Plugin QUnit; login/plugin sınırını, owner-only scoping'i, pending/disabled görünürlüğünü, private management alanlarını, istatistikleri, pagination'ı ve lazy UI davranışını kapsar.
+## Core Features
 
-## 2.8.0 scalable discovery
+- Public `/servers` directory and individual server detail pages.
+- Supported categories for Minecraft, FiveM, Rust, ARK, Silkroad Online, Metin2, Knight Online, and World of Warcraft.
+- Server-authoritative search, game/tag/status/verified filters, sorting, and bounded pagination.
+- User-submitted listings with owner association and optional administrator approval.
+- Owner editing and ownership-claim transfer through moderated workflows.
+- Daily voting and unique 1–5 star/text reviews.
+- DNS TXT ownership verification and verified-server presentation.
+- Abuse reporting and administrator moderation queues.
+- Private favorites/follows with optional back-online notifications.
+- Uptime history with bounded retention and public 24-hour/7-day/30-day views.
+- Periodic Sidekiq live-status refresh with short-lived cache data.
+- Responsive desktop, tablet, and mobile interfaces using Discourse theme variables.
+- English and Turkish localization.
 
-- `/servers` kataloğu artık ilk sınırlı bootstrap dilimini tarayıcıda filtrelemek yerine server-authoritative `/crimson-server-list/discovery.json` endpoint'ini kullanır.
-- Oyun, etiket, durum, doğrulanmış sunucu, arama ve sıralama filtreleri pagination uygulanmadan önce sunucuda çalışır; sayfa boyutu varsayılan 24, hard limit 50'dir.
-- Arama metni bounded tutulur, SQL wildcard karakterleri literal olarak escape edilir ve sıralama yalnız sabit whitelist üzerinden seçilir.
-- Discovery sonuçları deterministik tie-break sırası kullanır; istemci sonraki sayfaları duplicate sunucu ID üretmeden ekler ve eski/stale AJAX yanıtlarının yeni filtre sonucunu ezmesini engeller.
-- Public discovery serializer'ı host, bağlantı/sorgu portları ve probe/adapter diagnostic alanlarını ilan sahibi oturum açmış olsa bile katalog yanıtına eklemez.
-- `/servers` ilk yüklemesi metadata-only `/crimson-server-list/bootstrap.json` endpoint'ine taşındı; game/tag sayaçları, toplu istatistikler, viewer yetkileri ve admin moderasyon kuyrukları korunurken katalog kartları bootstrap payload'ından çıkarıldı.
-- Eski `/crimson-server-list.json` endpoint'i mevcut tüketiciler için geriye uyumlu bırakıldı.
-- Server-side request spec'leri ile Ember Build/Plugin QUnit; filtreleme, pagination, debounce, stale-response koruması, bootstrap geriye uyumluluğu ve UI entegrasyonunu kapsar.
+## Recent Development Highlights
 
-## 2.7.0 back-online bildirimleri
+### 2.9 — Owner Panel
 
-- Favoriye alınmış sunucularda `notifications_enabled` tercihi detay sayfasından ve özel Favorilerim panelinden yönetilebilir.
-- Yalnız tercihi açık takipçiler, izlenen sunucu gerçek bir `back_online` geçişi yaptığında Discourse içi kalıcı bildirim alır.
-- Aynı geçiş job'ı yeniden çalışırsa duplicate bildirim üretilmez; sunucu job çalışana kadar yeniden offline olmuşsa stale bildirim bastırılır.
-- Büyük takipçi listeleri tek job içinde sınırsız fan-out yapmak yerine bounded batch'lerle devam ettirilir.
-- Bildirim tercihi ve teslimat durumu kullanıcıya özeldir; public katalog serializer'ına takipçi bilgisi veya toplamı eklenmez.
+- Added private `GET /crimson-server-list/me/servers.json`.
+- The endpoint is always scoped to `owner_id = current_user.id`, including for administrator accounts.
+- Published, pending-review, and disabled owner listings are available in one management view.
+- Server-authoritative `publication_state`, `can_edit`, `can_refresh`, and `edit_requires_approval` values drive the UI.
+- Owner-private host/port/probe information remains private and is never added to public discovery responses.
+- The `/servers` page now includes a lazy, responsive owner panel with bounded pagination and summary statistics.
 
-## 2.6.0 favorites / follow backend
+### 2.8 — Scalable Discovery
 
-- Oturum açmış üyeler yayındaki sunucuları kendi özel favori listelerine kaydedebilir.
-- Her kullanıcı ve sunucu çifti için yalnızca tek follow kaydı tutulur; tekrar kaydetme duplicate satır üretmez.
-- Aynı ilişkideki `notifications_enabled` tercihi gelecekteki bildirim aboneliği için saklanır; bu sürüm bildirim göndermeye başlamaz.
-- Kullanıcı başına en fazla 500 aktif favori tutulur ve başarılı state değişiklikleri saatte 120 işlem ile sınırlandırılır.
-- Favori listesi yalnız ilgili kullanıcıya açıktır; başka kullanıcıların favori/takip bilgileri ve toplamları public serializer'a eklenmez.
-- Yayından kaldırılan veya devre dışı bırakılan sunucular private favori listesinde gösterilmez; kullanıcı bu kayıtları yine unfollow ederek temizleyebilir.
-- Sunucu veya kullanıcı silindiğinde foreign key `ON DELETE CASCADE` ile ilişki kaydı da temizlenir.
+- Added `/crimson-server-list/discovery.json` for server-side filtering, searching, sorting, and pagination.
+- Added metadata-only `/crimson-server-list/bootstrap.json` so the initial page load no longer duplicates the full catalog payload.
+- Search length, page size, page number, and sort modes are bounded and validated on the server.
+- Public discovery explicitly strips private connection/probe diagnostics.
 
-## 2.5.0 uptime history backend
+### 2.7 — Back-Online Notifications
 
-- Başarılı ve başarısız Sidekiq probe sonuçları sunucu başına 10 dakikalık zaman bucket'larında geçmiş sağlık örneklerine dönüştürülür.
-- Aynı sunucu ve aynı 10 dakikalık bucket için yalnızca tek kayıt tutulur; sık probe veya elle yenileme geçmiş tablosunu gereksiz büyütmez.
-- Varsayılan retention 30 gündür ve yönetici tarafından 7–90 gün arasında ayarlanabilir. Günlük cleanup eski kayıtları 5.000 satırlık batch'lerle siler.
-- Uptime yüzdesi yalnızca `online` ve `offline` örneklerinden hesaplanır; `unknown` ve `maintenance` yüzdesi yapay biçimde düşürmez/yükseltmez.
-- Oyuncu sayısı desteği olmayan adaptörlerde geçmiş `players_online` / `players_max` değerleri `null` tutulur; sayı uydurulmaz.
-- Public `/crimson-server-list/servers/:id/uptime.json` endpoint'i yalnız yayındaki sunuculara 24 saat, 7 gün veya 30 günlük geçmiş verir ve grafik serisini en fazla 240 noktaya sıkıştırır.
-- History yazımı secondary telemetry'dir; geçmiş kaydı yazılamazsa canlı probe sonucu bozulmaz. Sunucu silinirse DB foreign key `ON DELETE CASCADE` ile geçmiş örnekleri de temizlenir.
+- Users can opt into in-app recovery notifications for favorited servers.
+- Notifications are sent only after a confirmed offline → online transition.
+- Delivery is idempotent and batched for large follower sets.
 
-## 2.4.1 anti-abuse iyileştirmeleri
+### 2.6 — Favorites / Follow
 
-- Sunucu sahibi kendi ilanına oy veremez ve kendi ilanını yıldız/yorum ile değerlendiremez; kontrol backend seviyesinde uygulanır.
-- İlan sahibi detay JSON'unda oy ve değerlendirme aksiyonları kapalı döner; istemci yalnız bu server-authoritative durumu gösterir.
-- Normal üyeler için Discourse `RateLimiter` tabanlı korumalar eklendi: günde 5 yeni sunucu başvurusu, günde 100 sunucu oyu, saatte 30 değerlendirme yazımı/güncellemesi ve günde 10 sahiplik talebi.
-- Staff hesapları Discourse'un varsayılan rate-limit muafiyetini korur.
-- Validation, duplicate oy veya mevcut pending claim nedeniyle reddedilen istekler limiter kotasını tüketmez.
-- Anti-abuse hata yanıtları İngilizce ve Türkçe yerelleştirildi.
+- Private per-user favorites with duplicate protection and bounded limits.
+- Notification preference stored on the follow relationship.
 
-## 2.4.0 güven ve moderasyon
+### 2.5 — Uptime History
 
-- Sunucu sahibi DNS TXT challenge ile alan adı kontrolünü kanıtlayabilir; plaintext challenge veritabanında saklanmaz, yalnız SHA-256 digest tutulur.
-- Doğrulanmış sunucular liste ve detay sayfasında native Discourse uyumlu bir rozetle gösterilir.
-- Host veya sahip değiştiğinde doğrulama otomatik olarak iptal edilir.
-- Üyeler yayındaki sunucu ilanlarını sınırlı nedenlerle yönetici incelemesine raporlayabilir.
-- Aynı kullanıcı ve sunucu için ikinci pending rapor DB seviyesinde engellenir; rapor oluşturma işlemleri kullanıcı ve sunucu bazında rate-limit edilir.
-- Reporter kimliği ve rapor metni normal public server serializer'ına eklenmez.
-- Yalnız admin pending rapor kuyruğunu görebilir ve raporu `resolved` veya `dismissed` olarak sonuçlandırabilir; rapor sayısı sunucuyu otomatik olarak kapatmaz veya silmez.
-- Reporting UI ve Verified Server UI gerçek Discourse Ember Build + Plugin QUnit kapısından geçecek frontend testleriyle kapsanır.
+- Probe results are stored in bounded time buckets.
+- Configurable retention with batched cleanup.
+- Uptime calculations ignore unknown/maintenance samples instead of inventing availability data.
 
-## 2.2.2 iyileştirmeleri
+### 2.4 — Trust, Moderation, and Abuse Protection
 
-- `/servers` ve sunucu detay sayfaları Discourse uygulama kabuğu, tema değişkenleri ve native yoğunlukla uyumlu hale getirildi.
-- Resmî `Discourse Plugin` GitHub Actions iş akışı eklendi.
-- Minimum Token Context v3 çalışma kuralları projeye dahil edildi; AI reviewer onayları varsayılan merge gate olmaktan çıkarıldı.
-- Ruby lint ve schema annotation uyumluluğu resmî Discourse CI gereksinimlerine göre güncellendi.
+- DNS TXT server verification.
+- Listing reports and administrator review queues.
+- Owner self-voting/self-review protection.
+- Discourse `RateLimiter` protections for submissions, votes, reviews, and ownership claims.
 
-## 2.2.1 düzeltmesi
+## Live Query Adapters
 
-- Sayfa yenilendiğinde sayaçlarda kalan fakat kart listesinden kaybolan sunucular düzeltildi.
-- Katalog yanıtı URL'de kalmış eski filtrelerden ayrıldı ve dinamik JSON önbelleğe kapatıldı.
+| Game | Adapter | Result |
+| --- | --- | --- |
+| Minecraft Java | Server List Ping | Online players / capacity |
+| FiveM | `dynamic.json`, fallback `players.json` | Online players / capacity |
+| Rust | Steam A2S_INFO | Online players / capacity |
+| ARK | Steam A2S_INFO | Online players / capacity |
+| Silkroad Online | Bounded TCP reachability | Online / offline |
+| Metin2 | Bounded TCP reachability | Online / offline |
+| Knight Online | Bounded TCP reachability | Online / offline |
+| World of Warcraft | Bounded realm TCP reachability | Online / offline |
 
-## 2.2.0 özellikleri
+For games without a universal unauthenticated player-count protocol, the plugin reports reachability instead of fabricating player numbers.
 
-- Bağımsız `/servers` top listesi ve `/servers/:slug` tanıtım sayfaları
-- Minecraft, FiveM, Rust, ARK, Silkroad Online, Metin2, Knight Online ve
-  World of Warcraft için kategori gibi çalışan paylaşılabilir filtre adresleri
-- İlan başına en fazla 8 etiket; etikete tıklayarak oyunlar arası veya seçili
-  oyun içinde filtreleme
-- Liste ve tanıtım sayfasında oranı bozulmadan gösterilen standart 468×60
-  GIF/WebP reklam bannerları
-- Banner tıklamasının sunucu web sitesini yeni sekmede `nofollow`, `ugc`,
-  `sponsored`, `noopener` ve `noreferrer` nitelikleriyle açması
-- Oturum açmış üyeler için sunucu başvurusu; her kayıt Discourse kullanıcı
-  hesabının sahibiyle ilişkilidir
-- Sunucu sahibinin kendi tanıtımını sonradan düzenlemesi
-- İsteğe bağlı olarak sahip düzenlemelerini tekrar yönetici onayına gönderme
-- Hesap ve sunucu başına takvim gününde bir oy
-- Forum üyelerinden tekil 1–5 yıldız puanı ve metin yorumu
-- Oyun türüne göre değişen ilan alanları: CAP/seviye, EXP/SP/drop/yang/NP
-  oranları, wipe takvimi, framework, harita ve realm bilgileri
-- Her ilan için günlük tekil ziyaretçi temelli görüntülenme sayacı
-- Forum üyelerinin yayınlanmış bir ilan için sahiplik talebi göndermesi;
-  yönetici onayında sahipliğin talep eden hesaba atomik aktarılması
-- Yönetici ve moderatörlerin ilanı ayrıntı sayfasından kalıcı olarak silmesi
-- Host, bağlantı/sorgu portu, sorgu adaptörü, yanıt süresi ve sorgu hata
-  ayrıntılarının yalnızca ilan sahibi ile yöneticilere gönderilmesi; son kontrol
-  zamanının ziyaretçilere güven göstergesi olarak açık kalması
-- Oturum açmamış ziyaretçiye de görünen, giriş sonrası aynı ilana döndüren
-  sahiplenme çağrısı
-- Cosmetic eklentisiyle uyumlu, avatar ve kullanıcı metnini ayrı hedefleyen
-  kullanıcı kartı sarmalayıcıları
-- Eski bir sorgu portu artık izin listesinde olmasa bile adres alanları
-  değiştirilmeden banner/açıklama gibi güvenli ilan bilgilerinin güncellenmesi
-- Yönetici onay/red kuyruğu
-- Sidekiq üzerinden periyodik canlı durum yenileme ve kısa süreli önbellek
-- Masaüstü, tablet ve telefon için duyarlı arayüz
-- Doğrudan ziyaret ve yenileme için Rails uygulama kabuğu fallback rotaları
+## Network Security
 
-## Canlı sorgu adaptörleri
+Live probing is a security-sensitive SSRF boundary. The plugin routes submitted targets through its existing network policy and probe adapters:
 
-| Oyun | Adaptör | Sonuç |
-|---|---|---|
-| Minecraft Java | Server List Ping | Canlı oyuncu / kapasite |
-| FiveM | `dynamic.json`, gerekirse `players.json` | Canlı oyuncu / kapasite |
-| Rust | Steam A2S_INFO | Canlı oyuncu / kapasite |
-| ARK | Steam A2S_INFO | Canlı oyuncu / kapasite |
-| Silkroad Online | Kısa TCP erişim kontrolü | Çevrimiçi / çevrimdışı |
-| Metin2 | Kısa TCP erişim kontrolü | Çevrimiçi / çevrimdışı |
-| Knight Online | Kısa TCP erişim kontrolü | Çevrimiçi / çevrimdışı |
-| World of Warcraft | Kısa realm TCP erişim kontrolü | Çevrimiçi / çevrimdışı |
+- private, loopback, link-local, reserved, metadata, multicast, and other forbidden destinations are rejected;
+- DNS/IP validation is applied before connections and at relevant reconnect/redirect boundaries;
+- connections use strict timeouts and bounded work;
+- public serializers do not expose owner-private host/port/probe diagnostic data.
 
-Son dört oyun için tüm private server yazılımlarında ortak, kimlik doğrulamasız
-ve evrensel bir oyuncu sayısı protokolü bulunmadığından sayı uydurulmaz; yalnızca
-port erişimi gösterilir. Belirli bir emülatöre ait doğrulanmış API daha sonra ayrı
-bir adaptör olarak eklenebilir.
+Do not bypass `CrimsonServerList::NetworkPolicy` when extending probe behavior.
 
-## Ağ güvenliği
+## Installation
 
-Kullanıcının girdiği hedefe web isteğinin veya sayfa render'ının içinde bağlantı
-kurulmaz. Oluşturma, düzenleme, zamanlanmış yenileme ve elle yenileme yalnızca
-Sidekiq işi kuyruğa alır.
+Add the plugin to your Discourse container configuration:
 
-Her sorgudan önce şu kontroller zorunludur:
+```yaml
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - git clone https://github.com/dupless54/discourse-crimson-server-list.git
+```
 
-1. Host biçimi ve isteğe bağlı alan adı soneki izin listesi doğrulanır.
-2. DNS kısa zaman aşımıyla çözülür.
-3. Dönen **bütün** IPv4/IPv6 adresleri incelenir; loopback, private, link-local,
-   CGNAT, dokümantasyon, multicast ve ayrılmış ağlardan biri varsa hedef bütünüyle
-   reddedilir.
-4. Bağlantı DNS adını tekrar çözmek yerine doğrulanmış IP adresine kurulur; HTTP
-   `Host` başlığı yalnızca sanal host seçimi için korunur.
-5. Oyun başına port izin listesi uygulanır. Yönetici yalnızca gerekli ek portları
-   ayardan açabilir.
-6. Bağlantı ve okuma zaman aşımı 500–5000 ms aralığına sıkıştırılır.
-7. Yanıt en fazla 64 KiB okunur; HTTP yönlendirmeleri takip edilmez.
-8. Sonuç veritabanına ve süreli Discourse önbelleğine yazılır. Aynı kayıt için
-   Redis kilidi eşzamanlı sorgu fırtınasını engeller.
+Then rebuild Discourse:
 
-### Varsayılan port aralıkları
+```bash
+cd /var/discourse
+./launcher rebuild app
+```
 
-- Minecraft: `20000-30000`
-- FiveM: `30000-30250`
-- Rust: `27000-29000`
-- ARK: `7000-8100`, `27000-29000`
-- Silkroad Online: `15000-16500`
-- Metin2: `10000-14500`
-- Knight Online: `15000-16500`
-- World of Warcraft: `3000-9000`
+Enable the plugin in site settings and configure the server-list options required by your community.
 
-Farklı portlar yalnızca `crimson_server_list_extra_allowed_ports` ayarında
-bilinçli biçimde eklenmelidir.
+## Development
 
-## Kurulum ve güncelleme
+The repository uses official Discourse Plugin CI and exact-head validation for delivery. Start with [`AGENTS.md`](AGENTS.md) before changing network, ownership, moderation, or public-serialization behavior.
 
-1. Bu dizini mevcut eklenti Git deposunun köküne yükleyin.
-2. `/var/discourse` altında `./launcher rebuild app` çalıştırın. Yeni migration,
-   etiket, canlı durum, değerlendirme, bounded uptime history ve favori/takip tablosunu otomatik oluşturur.
-3. Yönetim panelinde **Eklentiler → Crimson server list** ayarlarını gözden
-   geçirin.
-4. `/servers` adresini açın.
+## Support
 
-Mevcut 1.x kurulumunun üzerine aynı eklenti adıyla güncellenebilir; sunucu ve oy
-kayıtları korunur.
-
-## Yetki ve veri modeli
-
-- Sunucular: `crimson_game_servers`
-- Günlük oylar: `crimson_server_votes`
-- Yorum ve yıldızlar: `crimson_server_reviews`
-- Sahiplik talepleri: `crimson_server_claim_requests`
-- Sunucu raporları: `crimson_server_reports`
-- Uptime history: `crimson_server_uptime_samples`
-- Favoriler / takip tercihleri: `crimson_server_follows`
-- Sunucu etiketleri: `crimson_game_servers.tags` JSONB alanı ve GIN indeksi
-- Başvuru, oy, yorum, elle yenileme, sahip düzenlemesi ve favori/takip işlemleri oturum gerektirir.
-- Bir kullanıcı aynı sunucuya yalnızca bir değerlendirme bırakabilir; yeniden
-  gönderdiğinde mevcut değerlendirmesi güncellenir.
-- Bir kullanıcı ve sunucu çifti için yalnız tek favori/takip ilişkisi bulunur; notification tercihi aynı satırda tutulur.
-- Sunucu sahibi yalnızca kendi kaydını düzenleyebilir; kendi ilanına oy veremez
-  veya değerlendirme bırakamaz; yönetici bütün kayıtları yönetebilir.
-- Yönetici ve moderatörler ilan silebilir; sahiplik aktarımını yalnızca yönetici
-  onaylayabilir.
-- Görüntülenme sayacı, oturum açmış hesap veya anonim tarayıcı parmak izi için
-  ilan başına günde en fazla bir artar. Ham IP adresi veritabanına yazılmaz.
-- Yayınlanmamış kayıt yalnızca sahibi ve yöneticiler tarafından tanıtım
-  adresinde görüntülenebilir.
-- Yayındaki kayıtlarda ağ uç noktası ve sorgu ayrıntıları API seviyesinde ilan
-  sahibi/yönetici dışındaki kullanıcılardan gizlenir; CSS ile saklama yapılmaz.
-- Web, Discord ve banner alanlarında yalnızca `http`/`https` URL'leri kabul
-  edilir. Banner istemci tarayıcısında gösterilir; canlı oyun sorgusu sunucuda
-  yalnızca yukarıdaki ağ politikası içinden yapılır.
-
-## Ayarlar
-
-- `crimson_server_list_enabled`
-- `crimson_server_list_submission_enabled`
-- `crimson_server_list_require_approval`
-- `crimson_server_list_votes_enabled`
-- `crimson_server_list_results_limit`
-- `crimson_server_list_live_query_enabled`
-- `crimson_server_list_query_interval_minutes`
-- `crimson_server_list_connect_timeout_ms`
-- `crimson_server_list_read_timeout_ms`
-- `crimson_server_list_extra_allowed_ports`
-- `crimson_server_list_allowed_host_suffixes`
-- `crimson_server_list_reviews_enabled`
-- `crimson_server_list_owner_edits_require_approval`
-- `crimson_server_list_reviews_limit`
-- `crimson_server_list_verification_enabled`
-- `crimson_server_list_verification_challenge_hours`
-- `crimson_server_list_reports_enabled`
-- `crimson_server_list_uptime_history_enabled`
-- `crimson_server_list_uptime_history_retention_days`
-- `crimson_server_list_follows_enabled`
+If this plugin helps your gaming community, you can support continued development through the Buy Me a Coffee banner at the top of this README.
