@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
-# version: 2.8.0
+# version: 2.9.0
 # authors: dupless54
 # url: https://senin.me/servers
 # required_version: 3.3.0
@@ -115,6 +115,7 @@ after_initialize do
   require_relative "lib/crimson_server_list/uptime_history"
   require_relative "lib/crimson_server_list/discovery"
   require_relative "app/controllers/crimson_server_list/servers_controller"
+  require_relative "app/controllers/crimson_server_list/owned_servers_controller"
   require_relative "app/controllers/crimson_server_list/bootstrap_controller"
   require_relative "app/controllers/crimson_server_list/discovery_controller"
   require_relative "lib/crimson_server_list/anti_abuse"
@@ -141,6 +142,7 @@ after_initialize do
       get "/crimson-server-list/discovery" => "crimson_server_list/discovery#index"
       get "/crimson-server-list/verifications" => "crimson_server_list/verifications#index"
       get "/crimson-server-list/me/follows" => "crimson_server_list/follows#index"
+      get "/crimson-server-list/me/servers" => "crimson_server_list/owned_servers#index"
       get "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#show"
       put "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#update"
       delete "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#destroy"
