@@ -1,7 +1,7 @@
 import Component from "@glimmer/component";
 import { fn } from "@ember/helper";
 import { action } from "@ember/object";
-import { cancel, later } from "@ember/runloop";
+import { cancel, later, scheduleOnce } from "@ember/runloop";
 import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
@@ -52,6 +52,7 @@ export default class CrimsonServerDiscoveryPanel extends Component {
       this.selectedTag = tag;
     }
 
+    scheduleOnce("afterRender", this, this.hideLegacyCatalogue);
     void this.loadDiscovery();
   }
 
@@ -62,6 +63,27 @@ export default class CrimsonServerDiscoveryPanel extends Component {
     }
 
     super.willDestroy(...arguments);
+  }
+
+  hideLegacyCatalogue() {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const legacyPage = document.querySelector(
+      ".csl-route-wrap--paginated-discovery > .csl-page",
+    );
+    if (!legacyPage) {
+      return;
+    }
+
+    for (const element of legacyPage.children) {
+      if (
+        element.matches(".csl-discovery, .csl-server-list, .csl-footnote")
+      ) {
+        element.hidden = true;
+      }
+    }
   }
 
   get viewer() {
@@ -111,7 +133,9 @@ export default class CrimsonServerDiscoveryPanel extends Component {
   }
 
   get canLoadMore() {
-    return Boolean(this.pagination?.has_more && !this.isLoading && !this.isLoadingMore);
+    return Boolean(
+      this.pagination?.has_more && !this.isLoading && !this.isLoadingMore,
+    );
   }
 
   @action
@@ -223,7 +247,9 @@ export default class CrimsonServerDiscoveryPanel extends Component {
       }
 
       const incoming = response.servers || [];
-      this.servers = append ? this.appendUnique(this.servers, incoming) : incoming;
+      this.servers = append
+        ? this.appendUnique(this.servers, incoming)
+        : incoming;
       this.pagination = response.pagination || {
         page,
         per_page: DEFAULT_PER_PAGE,
@@ -496,7 +522,7 @@ export default class CrimsonServerDiscoveryPanel extends Component {
       </section>
 
       {{#if this.pagination.has_more}}
-        <div class="csl-discovery-load-more">
+        <div class="csl-form__actions csl-discovery-load-more">
           <button class="csl-button csl-button--primary" type="button" disabled={{this.isLoadingMore}} {{on "click" this.loadMore}}>
             {{if this.isLoadingMore "Daha fazla sunucu yükleniyor…" "Daha fazla sunucu göster"}}
           </button>
