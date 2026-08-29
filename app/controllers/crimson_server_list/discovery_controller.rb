@@ -2,6 +2,16 @@
 
 module ::CrimsonServerList
   class DiscoveryController < CrimsonServerList::ServersController
+    PRIVATE_DISCOVERY_FIELDS = %i[
+      host
+      port
+      query_port
+      address
+      query_adapter
+      last_response_ms
+      last_query_error
+    ].freeze
+
     def index
       response.headers["Cache-Control"] = "private, no-store"
       result = CrimsonServerList::Discovery.new(params).call
@@ -10,7 +20,7 @@ module ::CrimsonServerList
       render json: {
                servers:
                  result[:records].map do |server|
-                   serialize_server(server, voted_today: voted_ids.include?(server.id))
+                   serialize_discovery_server(server, voted_ids)
                  end,
                pagination: {
                  page: result[:page],
@@ -22,6 +32,14 @@ module ::CrimsonServerList
                filters: result[:filters],
                viewer: viewer_payload,
              }
+    end
+
+    private
+
+    def serialize_discovery_server(server, voted_ids)
+      serialize_server(server, voted_today: voted_ids.include?(server.id)).except(
+        *PRIVATE_DISCOVERY_FIELDS,
+      )
     end
   end
 end
