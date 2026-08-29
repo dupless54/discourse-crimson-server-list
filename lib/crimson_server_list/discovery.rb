@@ -90,11 +90,11 @@ module ::CrimsonServerList
     end
 
     def normalized_page
-      @params[:page].to_i.clamp(1, MAX_PAGE)
+      @params[:page].to_s.to_i.clamp(1, MAX_PAGE)
     end
 
     def normalized_per_page
-      value = @params[:per_page].to_i
+      value = @params[:per_page].to_s.to_i
       value = DEFAULT_PER_PAGE if value <= 0
       value.clamp(1, MAX_PER_PAGE)
     end
