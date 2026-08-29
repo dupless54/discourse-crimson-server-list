@@ -113,7 +113,9 @@ after_initialize do
   require_relative "app/models/crimson_server_list/uptime_sample"
   require_relative "app/models/crimson_server_list/follow"
   require_relative "lib/crimson_server_list/uptime_history"
+  require_relative "lib/crimson_server_list/discovery"
   require_relative "app/controllers/crimson_server_list/servers_controller"
+  require_relative "app/controllers/crimson_server_list/discovery_controller"
   require_relative "lib/crimson_server_list/anti_abuse"
   require_relative "app/controllers/crimson_server_list/verifications_controller"
   require_relative "app/controllers/crimson_server_list/reports_controller"
@@ -134,6 +136,7 @@ after_initialize do
 
     defaults format: :json do
       get "/crimson-server-list" => "crimson_server_list/servers#index"
+      get "/crimson-server-list/discovery" => "crimson_server_list/discovery#index"
       get "/crimson-server-list/verifications" => "crimson_server_list/verifications#index"
       get "/crimson-server-list/me/follows" => "crimson_server_list/follows#index"
       get "/crimson-server-list/servers/:server_id/follow" => "crimson_server_list/follows#show"
