@@ -3,7 +3,7 @@ import DiscourseRoute from "discourse/routes/discourse";
 
 export default class ServersRoute extends DiscourseRoute {
   model() {
-    return ajax("/crimson-server-list.json");
+    return ajax("/crimson-server-list/bootstrap.json");
   }
 
   titleToken() {
