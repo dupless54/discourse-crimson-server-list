@@ -65,6 +65,7 @@ module("Integration | Component | crimson-server-favorite-action", function (hoo
     assert
       .dom(".csl-favorite-action__button")
       .hasAttribute("aria-pressed", "false");
+    assert.dom(".csl-notification-preference").doesNotExist();
 
     await click(".csl-favorite-action__button");
     await settled();
@@ -73,6 +74,7 @@ module("Integration | Component | crimson-server-favorite-action", function (hoo
     assert
       .dom(".csl-favorite-action__button")
       .hasAttribute("aria-pressed", "true");
+    assert.dom(".csl-notification-preference").exists();
 
     await click(".csl-favorite-action__button");
     await settled();
@@ -80,6 +82,59 @@ module("Integration | Component | crimson-server-favorite-action", function (hoo
     assert.strictEqual(removals, 1, "favorite is removed with one mutation");
     assert
       .dom(".csl-favorite-action__button")
+      .hasAttribute("aria-pressed", "false");
+    assert.dom(".csl-notification-preference").doesNotExist();
+  });
+
+  test("loads and updates the private back-online notification preference", async function (assert) {
+    const updates = [];
+
+    pretender.get("/crimson-server-list/servers/42/follow.json", () =>
+      response({
+        server_id: 42,
+        favorited: true,
+        notifications_enabled: false,
+      }),
+    );
+    pretender.put(
+      "/crimson-server-list/servers/42/follow.json",
+      (request) => {
+        const body = new URLSearchParams(request.requestBody || "");
+        const desired = body.get("notifications_enabled");
+        updates.push(desired);
+        return response({
+          server_id: 42,
+          favorited: true,
+          notifications_enabled: desired === "true",
+        });
+      },
+    );
+
+    await render(
+      <template>
+        <CrimsonServerFavoriteAction @model={{this.model}} />
+      </template>
+    );
+    await settled();
+
+    assert
+      .dom(".csl-notification-preference__button")
+      .hasAttribute("aria-pressed", "false");
+
+    await click(".csl-notification-preference__button");
+    await settled();
+
+    assert.deepEqual(updates, ["true"], "enabling sends the server-authoritative preference");
+    assert
+      .dom(".csl-notification-preference__button")
+      .hasAttribute("aria-pressed", "true");
+
+    await click(".csl-notification-preference__button");
+    await settled();
+
+    assert.deepEqual(updates, ["true", "false"], "disabling sends the inverse preference");
+    assert
+      .dom(".csl-notification-preference__button")
       .hasAttribute("aria-pressed", "false");
   });
 
