@@ -58,6 +58,38 @@ export default class CrimsonServerFavoritesPanel extends Component {
   }
 
   @action
+  async toggleNotifications(follow) {
+    if (this.busyServerId) {
+      return;
+    }
+
+    this.busyServerId = follow.server_id;
+    this.errorMessage = "";
+
+    try {
+      const response = await ajax(
+        `/crimson-server-list/servers/${follow.server_id}/follow.json`,
+        {
+          type: "PUT",
+          data: { notifications_enabled: !follow.notifications_enabled },
+        },
+      );
+      this.follows = this.follows.map((candidate) =>
+        candidate.server_id === follow.server_id
+          ? {
+              ...candidate,
+              notifications_enabled: Boolean(response.notifications_enabled),
+            }
+          : candidate,
+      );
+    } catch (error) {
+      this.errorMessage = this.errorText(error);
+    } finally {
+      this.busyServerId = null;
+    }
+  }
+
+  @action
   async removeFavorite(follow) {
     if (this.busyServerId) {
       return;
@@ -79,6 +111,18 @@ export default class CrimsonServerFavoritesPanel extends Component {
     } finally {
       this.busyServerId = null;
     }
+  }
+
+  notificationAriaPressed(follow) {
+    return follow.notifications_enabled ? "true" : "false";
+  }
+
+  notificationLabel(follow) {
+    return i18n(
+      follow.notifications_enabled
+        ? "crimson_server_list.notifications.disable_back_online_short"
+        : "crimson_server_list.notifications.enable_back_online_short",
+    );
   }
 
   statusLabel(status) {
@@ -135,6 +179,19 @@ export default class CrimsonServerFavoritesPanel extends Component {
                       </div>
                       <p>{{follow.server.short_description}}</p>
                       <span class="csl-status csl-status--{{follow.server.status}}"><i></i>{{this.statusLabel follow.server.status}}</span>
+                    </div>
+
+                    <div class="csl-favorite-card__preference">
+                      <span>{{i18n "crimson_server_list.notifications.preference_card"}}</span>
+                      <button
+                        class="csl-button csl-favorite-card__notification {{if follow.notifications_enabled "is-active" ""}}"
+                        type="button"
+                        disabled={{eq this.busyServerId follow.server_id}}
+                        aria-pressed={{this.notificationAriaPressed follow}}
+                        {{on "click" (fn this.toggleNotifications follow)}}
+                      >
+                        {{this.notificationLabel follow}}
+                      </button>
                     </div>
 
                     <div class="csl-favorite-card__actions">
