@@ -1,9 +1,20 @@
 # discourse-crimson-server-list
 
-Sürüm: **2.8.0**
+Sürüm: **2.9.0**
 
 Discourse için forum konu ve kategori tablolarından bağımsız çalışan; yönetici
 onaylı, canlı durum destekli private oyun sunucusu top listesi.
+
+## 2.9.0 owner panel
+
+- Oturum açmış kullanıcılar `/servers` sayfasındaki **Sunucularım** panelinden sahip oldukları bütün ilanları tek yerde görebilir; panel kapalıyken private owner API çağrısı yapılmaz.
+- Private `GET /crimson-server-list/me/servers.json` endpoint'i her zaman `owner_id = current_user.id` ile scope edilir; yönetici hesabı bile bu `me` endpoint'inden başka kullanıcıların ilanlarını göremez.
+- Owner panel yayındaki, onay bekleyen ve devre dışı ilanları birlikte gösterir; toplam/yayında/bekleyen/devre dışı/çevrimiçi/doğrulanmış özetleri server-authoritative olarak döner.
+- İlan sahibi yönetim amacıyla kendi host/port ve mevcut probe tanı alanlarını görebilir; bu private alanlar public discovery serializer'ına eklenmez.
+- Yönetim durumu `publication_state`, `can_edit`, `can_refresh` ve `edit_requires_approval` alanlarıyla backend tarafından belirlenir; istemci ownership veya yetki tahmini yapmaz.
+- Owner listesi backend'de bounded pagination kullanır (varsayılan 24, hard limit 50); UI 12'lik sayfalarla lazy load eder, sonraki sayfalarda duplicate sunucu ID üretmez ve yeniden açıldığında gereksiz refetch yapmaz.
+- Panel yükleme, boş, hata/retry ve responsive mobil durumlarıyla EN/TR yerelleştirmeye sahiptir; gerçek düzenleme/yönetim yüzeyi mevcut sunucu detay sayfası olarak kalır.
+- Request spec'leri ile Ember Build/Plugin QUnit; login/plugin sınırını, owner-only scoping'i, pending/disabled görünürlüğünü, private management alanlarını, istatistikleri, pagination'ı ve lazy UI davranışını kapsar.
 
 ## 2.8.0 scalable discovery
 
