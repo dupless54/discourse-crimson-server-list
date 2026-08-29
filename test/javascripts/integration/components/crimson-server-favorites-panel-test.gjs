@@ -20,9 +20,10 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
       this.previousFollowsEnabled;
   });
 
-  test("lazy-loads the private list once and removes a favorite", async function (assert) {
+  test("lazy-loads favorites, updates notifications, and removes a favorite", async function (assert) {
     let listReads = 0;
     let removals = 0;
+    const notificationUpdates = [];
 
     pretender.get("/crimson-server-list/me/follows.json", () => {
       listReads += 1;
@@ -49,6 +50,19 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
         ],
       });
     });
+    pretender.put(
+      "/crimson-server-list/servers/42/follow.json",
+      (request) => {
+        const body = new URLSearchParams(request.requestBody || "");
+        const desired = body.get("notifications_enabled");
+        notificationUpdates.push(desired);
+        return response({
+          server_id: 42,
+          favorited: true,
+          notifications_enabled: desired === "true",
+        });
+      },
+    );
     pretender.delete("/crimson-server-list/servers/42/follow.json", () => {
       removals += 1;
       return response({
@@ -74,6 +88,21 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
     assert.strictEqual(listReads, 1, "opening the panel performs one private-list request");
     assert.dom(".csl-favorite-card").exists({ count: 1 });
     assert.dom(".csl-favorite-card h3 a").hasText("CrimsonCraft");
+    assert
+      .dom(".csl-favorite-card__notification")
+      .hasAttribute("aria-pressed", "false");
+
+    await click(".csl-favorite-card__notification");
+    await settled();
+
+    assert.deepEqual(
+      notificationUpdates,
+      ["true"],
+      "notification preference is updated through the private follow API",
+    );
+    assert
+      .dom(".csl-favorite-card__notification")
+      .hasAttribute("aria-pressed", "true");
 
     await click(".csl-favorite-card__remove");
     await settled();
