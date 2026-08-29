@@ -96,3 +96,6 @@ tr_TR:
         status_offline: "Çevrimdışı"
         status_unknown: "Bilinmiyor"
         status_maintenance: "Bakımda"
+      notifications:
+        back_online_label: "Yeniden çevrimiçi"
+        back_online_title: "%{server} yeniden çevrimiçi"
