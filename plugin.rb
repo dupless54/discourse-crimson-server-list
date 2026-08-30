@@ -17,6 +17,7 @@ register_asset "stylesheets/crimson-server-v3.scss"
 register_asset "stylesheets/crimson-server-v3-featured.scss"
 register_asset "stylesheets/crimson-server-v3-detail.scss"
 register_asset "stylesheets/crimson-server-v3-card-actions.scss"
+register_asset "stylesheets/crimson-server-v3-shell.scss"
 
 module ::CrimsonServerList
   PLUGIN_NAME = "discourse-crimson-server-list"

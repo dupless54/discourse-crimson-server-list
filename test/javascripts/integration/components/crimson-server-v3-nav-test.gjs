@@ -1,6 +1,6 @@
 import { click, render } from "@ember/test-helpers";
-import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
+import { setupRenderingTest } from "discourse/tests/helpers/component-test";
 import CrimsonServerV3Nav from "discourse/plugins/discourse-crimson-server-list/discourse/components/crimson-server-v3-nav";
 
 module("Integration | Component | crimson-server-v3-nav", function (hooks) {
@@ -8,33 +8,47 @@ module("Integration | Component | crimson-server-v3-nav", function (hooks) {
 
   test("shows only discover navigation to anonymous viewers", async function (assert) {
     this.set("viewer", { logged_in: false, is_admin: false });
+    this.set("activeTab", "discover");
+    this.activate = (tab) => this.set("activeTab", tab);
 
     await render(
       <template>
-        <CrimsonServerV3Nav @viewer={{this.viewer}} />
-      </template>
+        <CrimsonServerV3Nav
+          @viewer={{this.viewer}}
+          @activeTab={{this.activeTab}}
+          @onActivate={{this.activate}}
+        />
+      </template>,
     );
 
-    assert.dom(".csl-v3-nav a").exists({ count: 1 });
-    assert.dom('.csl-v3-nav a[href="#csl-v3-discover"]').hasClass("is-active");
+    assert.dom(".csl-v3-nav button").exists({ count: 1 });
+    assert.dom("#csl-v3-tab-discover").hasClass("is-active");
+    assert.dom("#csl-v3-tab-discover").hasAttribute("aria-selected", "true");
   });
 
-  test("shows personal and administration sections to an admin", async function (assert) {
+  test("drives the controlled active tab for an admin", async function (assert) {
     this.set("viewer", { logged_in: true, is_admin: true });
+    this.set("activeTab", "discover");
+    this.activate = (tab) => this.set("activeTab", tab);
 
     await render(
       <template>
-        <CrimsonServerV3Nav @viewer={{this.viewer}} />
-      </template>
+        <CrimsonServerV3Nav
+          @viewer={{this.viewer}}
+          @activeTab={{this.activeTab}}
+          @onActivate={{this.activate}}
+        />
+      </template>,
     );
 
-    assert.dom(".csl-v3-nav a").exists({ count: 4 });
+    assert.dom(".csl-v3-nav button").exists({ count: 4 });
 
-    await click('.csl-v3-nav a[href="#csl-v3-owned"]');
+    await click("#csl-v3-tab-owned");
 
-    assert.dom('.csl-v3-nav a[href="#csl-v3-owned"]').hasClass("is-active");
-    assert
-      .dom('.csl-v3-nav a[href="#csl-v3-discover"]')
-      .doesNotHaveClass("is-active");
+    assert.strictEqual(this.activeTab, "owned");
+    assert.dom("#csl-v3-tab-owned").hasClass("is-active");
+    assert.dom("#csl-v3-tab-owned").hasAttribute("aria-selected", "true");
+    assert.dom("#csl-v3-tab-discover").doesNotHaveClass("is-active");
+    assert.dom("#csl-v3-tab-discover").hasAttribute("aria-selected", "false");
   });
 });

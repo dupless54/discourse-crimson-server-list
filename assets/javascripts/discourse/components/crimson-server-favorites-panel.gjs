@@ -1,6 +1,7 @@
 import Component from "@glimmer/component";
 import { fn } from "@ember/helper";
 import { action } from "@ember/object";
+import { scheduleOnce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { on } from "@ember/modifier";
@@ -12,12 +13,19 @@ import CrimsonVerifiedBadge from "./crimson-verified-badge";
 export default class CrimsonServerFavoritesPanel extends Component {
   @service siteSettings;
 
-  @tracked isOpen = false;
   @tracked isLoaded = false;
   @tracked isLoading = false;
   @tracked busyServerId = null;
   @tracked follows = [];
   @tracked errorMessage = "";
+
+  constructor(owner, args) {
+    super(owner, args);
+
+    if (this.canRender) {
+      scheduleOnce("afterRender", this, this.loadFavorites);
+    }
+  }
 
   get canRender() {
     return Boolean(
@@ -33,16 +41,11 @@ export default class CrimsonServerFavoritesPanel extends Component {
   }
 
   @action
-  async toggleOpen() {
-    this.isOpen = !this.isOpen;
-    this.errorMessage = "";
-
-    if (this.isOpen && !this.isLoaded) {
-      await this.loadFavorites();
-    }
-  }
-
   async loadFavorites() {
+    if (this.isLoading) {
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = "";
 
@@ -143,75 +146,71 @@ export default class CrimsonServerFavoritesPanel extends Component {
   <template>
     {{#if this.canRender}}
       <section class="csl-panel csl-favorites-panel" aria-labelledby="csl-favorites-title">
-        <header class="csl-favorites-panel__header">
+        <header class="csl-favorites-panel__header csl-v3-panel-heading">
           <div>
             <p class="csl-eyebrow">{{i18n "crimson_server_list.favorites.eyebrow"}}</p>
             <h2 id="csl-favorites-title">{{i18n "crimson_server_list.favorites.list_title"}}</h2>
             <p>{{i18n "crimson_server_list.favorites.list_description"}}</p>
           </div>
-
-          <button
-            class="csl-button csl-favorites-panel__toggle"
-            type="button"
-            aria-expanded={{this.isOpen}}
-            {{on "click" this.toggleOpen}}
-          >
-            {{if this.isOpen (i18n "crimson_server_list.favorites.close") (i18n "crimson_server_list.favorites.open")}}
-          </button>
+          {{#if this.isLoaded}}
+            <span class="csl-v3-panel-count">{{this.countLabel}}</span>
+          {{/if}}
         </header>
 
-        {{#if this.isOpen}}
-          {{#if this.errorMessage}}
+        {{#if this.errorMessage}}
+          <div class="csl-v3-panel-error">
             <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
-          {{else if this.isLoading}}
-            <p class="csl-empty csl-empty--compact" role="status">{{i18n "crimson_server_list.favorites.loading_list"}}</p>
-          {{else}}
-            <div class="csl-favorites-panel__summary">{{this.countLabel}}</div>
+            <button class="csl-button" type="button" {{on "click" this.loadFavorites}}>
+              {{i18n "crimson_server_list.owner_panel.retry"}}
+            </button>
+          </div>
+        {{else if this.isLoading}}
+          <div class="csl-v3-tab-loading" role="status">
+            <span class="csl-v3-loading-dot" aria-hidden="true"></span>
+            {{i18n "crimson_server_list.favorites.loading_list"}}
+          </div>
+        {{else if this.follows.length}}
+          <div class="csl-favorites-grid">
+            {{#each this.follows as |follow|}}
+              <article class="csl-favorite-card csl-game--{{follow.server.game_slug}}">
+                <div class="csl-favorite-card__body">
+                  <div class="csl-favorite-card__title-row">
+                    <h3><a href={{follow.server.detail_url}}>{{follow.server.name}}</a></h3>
+                    <CrimsonVerifiedBadge @server={{follow.server}} />
+                  </div>
+                  <p>{{follow.server.short_description}}</p>
+                  <span class="csl-status csl-status--{{follow.server.status}}"><i></i>{{this.statusLabel follow.server.status}}</span>
+                </div>
 
-            {{#if this.follows.length}}
-              <div class="csl-favorites-grid">
-                {{#each this.follows as |follow|}}
-                  <article class="csl-favorite-card csl-game--{{follow.server.game_slug}}">
-                    <div class="csl-favorite-card__body">
-                      <div class="csl-favorite-card__title-row">
-                        <h3><a href={{follow.server.detail_url}}>{{follow.server.name}}</a></h3>
-                        <CrimsonVerifiedBadge @server={{follow.server}} />
-                      </div>
-                      <p>{{follow.server.short_description}}</p>
-                      <span class="csl-status csl-status--{{follow.server.status}}"><i></i>{{this.statusLabel follow.server.status}}</span>
-                    </div>
+                <div class="csl-favorite-card__preference">
+                  <span>{{i18n "crimson_server_list.notifications.preference_card"}}</span>
+                  <button
+                    class="csl-button csl-favorite-card__notification {{if follow.notifications_enabled "is-active" ""}}"
+                    type="button"
+                    disabled={{eq this.busyServerId follow.server_id}}
+                    aria-pressed={{this.notificationAriaPressed follow}}
+                    {{on "click" (fn this.toggleNotifications follow)}}
+                  >{{this.notificationLabel follow}}</button>
+                </div>
 
-                    <div class="csl-favorite-card__preference">
-                      <span>{{i18n "crimson_server_list.notifications.preference_card"}}</span>
-                      <button
-                        class="csl-button csl-favorite-card__notification {{if follow.notifications_enabled "is-active" ""}}"
-                        type="button"
-                        disabled={{eq this.busyServerId follow.server_id}}
-                        aria-pressed={{this.notificationAriaPressed follow}}
-                        {{on "click" (fn this.toggleNotifications follow)}}
-                      >
-                        {{this.notificationLabel follow}}
-                      </button>
-                    </div>
-
-                    <div class="csl-favorite-card__actions">
-                      <a class="csl-button" href={{follow.server.detail_url}}>{{i18n "crimson_server_list.favorites.open_server"}}</a>
-                      <button
-                        class="csl-button csl-favorite-card__remove"
-                        type="button"
-                        disabled={{eq this.busyServerId follow.server_id}}
-                        {{on "click" (fn this.removeFavorite follow)}}
-                      >
-                        {{if (eq this.busyServerId follow.server_id) (i18n "crimson_server_list.favorites.saving") (i18n "crimson_server_list.favorites.remove")}}
-                      </button>
-                    </div>
-                  </article>
-                {{/each}}
-              </div>
-            {{else}}
-              <p class="csl-empty csl-empty--compact">{{i18n "crimson_server_list.favorites.empty"}}</p>
-            {{/if}}
-          {{/if}}
+                <div class="csl-favorite-card__actions">
+                  <a class="csl-button csl-button--primary" href={{follow.server.detail_url}}>{{i18n "crimson_server_list.favorites.open_server"}}</a>
+                  <button
+                    class="csl-button csl-favorite-card__remove"
+                    type="button"
+                    disabled={{eq this.busyServerId follow.server_id}}
+                    {{on "click" (fn this.removeFavorite follow)}}
+                  >
+                    {{if (eq this.busyServerId follow.server_id) (i18n "crimson_server_list.favorites.saving") (i18n "crimson_server_list.favorites.remove")}}
+                  </button>
+                </div>
+              </article>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="csl-empty csl-empty--compact csl-v3-tab-empty">
+            <p>{{i18n "crimson_server_list.favorites.empty"}}</p>
+          </div>
         {{/if}}
       </section>
     {{/if}}

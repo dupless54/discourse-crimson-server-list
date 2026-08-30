@@ -1,6 +1,7 @@
 import { click, render } from "@ember/test-helpers";
-import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
+import { setupRenderingTest } from "discourse/tests/helpers/component-test";
+import CrimsonServerReportModal from "discourse/plugins/discourse-crimson-server-list/discourse/components/modal/crimson-server-report";
 import CrimsonServerReportPanel from "discourse/plugins/discourse-crimson-server-list/discourse/components/crimson-server-report-panel";
 
 module("Integration | Component | crimson-server-report-panel", function (hooks) {
@@ -11,14 +12,22 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
     this.previousReportsEnabled =
       this.siteSettings.crimson_server_list_reports_enabled;
     this.siteSettings.crimson_server_list_reports_enabled = true;
+
+    this.modal = this.owner.lookup("service:modal");
+    this.originalModalShow = this.modal.show;
+    this.modalCalls = [];
+    this.modal.show = (component, options) => {
+      this.modalCalls.push({ component, options });
+    };
   });
 
   hooks.afterEach(function () {
     this.siteSettings.crimson_server_list_reports_enabled =
       this.previousReportsEnabled;
+    this.modal.show = this.originalModalShow;
   });
 
-  test("lets a signed-in non-owner open the report form", async function (assert) {
+  test("opens the report flow in DModal instead of page flow", async function (assert) {
     this.set("model", {
       server: { id: 42, name: "CrimsonCraft" },
       viewer: { logged_in: true, can_edit: false },
@@ -27,7 +36,7 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
     await render(
       <template>
         <CrimsonServerReportPanel @model={{this.model}} />
-      </template>
+      </template>,
     );
 
     assert.dom(".csl-report-panel").exists();
@@ -35,12 +44,21 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
 
     await click(".csl-report-panel > button");
 
-    assert.dom(".csl-report-form").exists();
-    assert.dom(".csl-report-form select[name='reason']").exists();
-    assert.dom(".csl-report-form textarea[name='details']").exists();
+    assert.dom(".csl-report-form").doesNotExist("no inline form is inserted into the page");
+    assert.strictEqual(this.modalCalls.length, 1, "the modal service is invoked once");
+    assert.strictEqual(
+      this.modalCalls[0].component,
+      CrimsonServerReportModal,
+      "the report DModal component is opened",
+    );
+    assert.strictEqual(
+      this.modalCalls[0].options.model.server.id,
+      42,
+      "the selected server is passed to the modal",
+    );
   });
 
-  test("does not expose the member report form to the listing owner", async function (assert) {
+  test("does not expose the member report action to the listing owner", async function (assert) {
     this.set("model", {
       server: { id: 42, name: "CrimsonCraft" },
       viewer: { logged_in: true, can_edit: true },
@@ -49,9 +67,10 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
     await render(
       <template>
         <CrimsonServerReportPanel @model={{this.model}} />
-      </template>
+      </template>,
     );
 
     assert.dom(".csl-report-panel").doesNotExist();
+    assert.strictEqual(this.modalCalls.length, 0);
   });
 });

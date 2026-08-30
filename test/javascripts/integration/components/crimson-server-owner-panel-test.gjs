@@ -36,7 +36,7 @@ module("Integration | Component | crimson-server-owner-panel", function (hooks) 
     this.set("viewer", { logged_in: true });
   });
 
-  test("lazy-loads owned servers and appends pagination without duplicates", async function (assert) {
+  test("loads owned servers on mount and appends pagination without duplicates", async function (assert) {
     const reads = [];
 
     pretender.get("/crimson-server-list/me/servers.json", (request) => {
@@ -98,17 +98,12 @@ module("Integration | Component | crimson-server-owner-panel", function (hooks) 
     await render(
       <template>
         <CrimsonServerOwnerPanel @viewer={{this.viewer}} />
-      </template>
+      </template>,
     );
     await settled();
 
-    assert.deepEqual(reads, [], "closed panel performs no private request");
-    assert.dom(".csl-owner-card").doesNotExist();
-
-    await click(".csl-owner-panel__toggle");
-    await settled();
-
     assert.deepEqual(reads, [{ page: 1, perPage: 12 }]);
+    assert.dom(".csl-owner-panel__toggle").doesNotExist();
     assert.dom(".csl-owner-card").exists({ count: 2 });
     assert.dom(".csl-owner-card__address").includesText("owner.example.net:25565");
     assert.dom(".csl-owner-card__publication--published").exists();
@@ -124,12 +119,6 @@ module("Integration | Component | crimson-server-owner-panel", function (hooks) 
     ]);
     assert.dom(".csl-owner-card").exists({ count: 3 });
     assert.dom(".csl-owner-card__publication--disabled").exists();
-
-    await click(".csl-owner-panel__toggle");
-    await click(".csl-owner-panel__toggle");
-    await settled();
-
-    assert.strictEqual(reads.length, 2, "reopening an already loaded panel does not refetch");
   });
 
   test("shows an explicit error state and retries the private request", async function (assert) {
@@ -165,10 +154,8 @@ module("Integration | Component | crimson-server-owner-panel", function (hooks) 
     await render(
       <template>
         <CrimsonServerOwnerPanel @viewer={{this.viewer}} />
-      </template>
+      </template>,
     );
-
-    await click(".csl-owner-panel__toggle");
     await settled();
 
     assert.strictEqual(reads, 1);
@@ -195,7 +182,7 @@ module("Integration | Component | crimson-server-owner-panel", function (hooks) 
     await render(
       <template>
         <CrimsonServerOwnerPanel @viewer={{this.viewer}} />
-      </template>
+      </template>,
     );
     await settled();
 
