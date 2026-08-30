@@ -1,9 +1,9 @@
 /*
- * Final V3 discovery/tab hardening.
+ * V3 compact discovery list.
  *
- * Loaded after the existing V3 layers so the public list keeps one compact,
- * banner-first layout and inactive account/admin panels can never leak into
- * Discover through older presentation rules.
+ * This layer intentionally loads after the broader V3 styles. Discovery is a
+ * dense directory, not a card gallery: one server per row, compact metadata,
+ * bounded actions, and a responsive information hierarchy.
  */
 
 .csl-route-wrap--paginated-discovery .csl-v3-shell {
@@ -22,78 +22,110 @@
   touch-action: manipulation;
 }
 
-/* Migration guard for the pre-switch shell that mounted teaser panels at the
- * shell root. The current shell renders these panels only inside their active
- * route section, so these selectors are intentionally root-child only. */
+/* Migration guard for legacy shell-mounted secondary panels. */
 .csl-v3-shell > .csl-favorites-panel,
 .csl-v3-shell > .csl-owner-panel,
 .csl-v3-shell > .csl-report-moderation {
   display: none !important;
 }
 
-/* Compact banner-first public list -------------------------------------- */
+/* Compact directory rows ------------------------------------------------ */
 .csl-route-wrap--paginated-discovery .csl-server-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.55rem;
+  gap: 0.42rem;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card {
   position: relative;
   display: grid;
-  grid-template-columns: 3.15rem minmax(0, 1fr) 10rem;
-  grid-template-areas:
-    "banner banner banner"
-    "rank body score";
+  grid-template-columns: 2.7rem 10.25rem minmax(0, 1fr) minmax(15.5rem, 18rem);
+  grid-template-areas: "rank visual body score";
   min-width: 0;
+  min-height: 7.25rem;
   overflow: hidden;
+  align-items: stretch;
   background: var(--csl-shell-panel, var(--secondary));
   border: 1px solid var(--csl-shell-border, var(--primary-low));
-  border-radius: var(--csl-shell-radius, 10px);
-  box-shadow: 0 5px 16px rgb(var(--primary-rgb), 0.045);
+  border-radius: 0.65rem;
+  box-shadow: 0 2px 8px rgb(var(--primary-rgb), 0.045);
   transform: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card:hover {
+  background: color-mix(in srgb, var(--secondary) 97%, var(--primary) 3%);
+  border-color: color-mix(
+    in srgb,
+    var(--csl-game, var(--tertiary)) 34%,
+    var(--primary-low)
+  );
+  box-shadow: 0 5px 16px rgb(var(--primary-rgb), 0.075);
   transform: none;
-  box-shadow: 0 8px 22px rgb(var(--primary-rgb), 0.07);
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card::after {
-  top: auto;
-  right: 0;
+  top: 0;
+  right: auto;
   bottom: 0;
   left: 0;
-  width: auto;
-  height: 2px;
-  opacity: 0.7;
+  width: 3px;
+  height: auto;
+  opacity: 0.78;
 }
 
-.csl-route-wrap--paginated-discovery .csl-server-card__visual {
-  grid-area: banner;
+/* Rank ------------------------------------------------------------------ */
+.csl-route-wrap--paginated-discovery .csl-rank {
+  grid-area: rank;
   display: flex;
   min-width: 0;
-  padding: 0.65rem 0.9rem 0.35rem;
+  padding: 0.7rem 0.15rem;
   align-items: center;
-  justify-content: flex-start;
-  background: color-mix(in srgb, var(--secondary) 97%, var(--primary) 3%);
-  border-bottom: 1px solid color-mix(in srgb, var(--primary) 9%, transparent);
+  justify-content: center;
+  align-self: stretch;
+  color: var(--primary-medium);
+  font-size: var(--font-down-1);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  background: color-mix(in srgb, var(--primary) 3%, transparent);
+  border-inline-end: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
-.csl-route-wrap--paginated-discovery .csl-server-card__visual:has(.csl-server-card__fallback) {
-  display: none;
+.csl-route-wrap--paginated-discovery .csl-rank span {
+  margin-inline-end: 0.05em;
+  color: var(--primary-low-mid);
+  font-size: 0.8em;
+}
+
+/* Banner / game identity ------------------------------------------------ */
+.csl-route-wrap--paginated-discovery .csl-server-card__visual {
+  grid-area: visual;
+  display: flex;
+  min-width: 0;
+  padding: 0.65rem;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--secondary) 94%, var(--primary) 6%);
+  border-inline-end: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .csl-route-wrap--paginated-discovery .csl-ad-banner {
-  display: block;
-  width: min(468px, 100%);
-  max-width: 468px;
+  display: flex;
+  width: 100%;
+  max-width: 9rem;
+  height: 3.35rem;
   min-height: 0;
-  aspect-ratio: 468 / 60;
   overflow: hidden;
-  background: transparent;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary);
   border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
-  border-radius: 6px;
+  border-radius: 0.45rem;
 }
 
 .csl-route-wrap--paginated-discovery .csl-ad-banner img {
@@ -101,207 +133,432 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: left center;
+  object-position: center;
   transform: none !important;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__fallback {
-  display: none !important;
-}
-
-.csl-route-wrap--paginated-discovery .csl-rank {
-  grid-area: rank;
-  align-self: start;
-  padding: 0.82rem 0.2rem 0.7rem;
+  display: grid !important;
+  width: 4.4rem;
+  height: 4.4rem;
+  padding: 0.35rem;
+  place-items: center;
+  color: var(--primary-high);
   text-align: center;
-  font-size: var(--font-0);
-  line-height: 1.2;
+  text-decoration: none;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      color-mix(in srgb, var(--csl-game, var(--tertiary)) 16%, transparent),
+      transparent 70%
+    ),
+    var(--secondary);
+  border: 1px solid color-mix(in srgb, var(--csl-game, var(--tertiary)) 24%, var(--primary-low));
+  border-radius: 0.6rem;
 }
 
+.csl-route-wrap--paginated-discovery .csl-server-card__fallback span {
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-card__fallback small {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--primary-medium);
+  font-size: var(--font-down-3);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Main information ------------------------------------------------------ */
 .csl-route-wrap--paginated-discovery .csl-server-card__body {
   grid-area: body;
   min-width: 0;
-  padding: 0.72rem 0.85rem 0.75rem;
+  padding: 0.72rem 0.82rem;
+  align-self: center;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__body > header {
-  gap: 0.6rem;
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-card__body > header > div {
+  min-width: 0;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-card__title-row {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__body h2 {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   font-size: var(--font-up-1);
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-card__body h2 a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-card__body h2 a:hover,
+.csl-route-wrap--paginated-discovery .csl-server-card__body h2 a:focus-visible {
+  color: var(--tertiary);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__body header p {
   display: -webkit-box;
-  margin: 0.25rem 0 0;
+  max-width: 72ch;
+  margin: 0.22rem 0 0;
   overflow: hidden;
   color: var(--primary-medium);
   font-size: var(--font-down-1);
-  line-height: 1.35;
+  line-height: 1.32;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
 
+.csl-route-wrap--paginated-discovery .csl-featured {
+  flex: 0 0 auto;
+  min-height: 1.45rem;
+  padding: 0.16rem 0.42rem;
+  font-size: var(--font-down-3);
+  line-height: 1.1;
+}
+
+.csl-route-wrap--paginated-discovery .csl-card-favorite {
+  width: 1.85rem;
+  height: 1.85rem;
+  font-size: var(--font-down-1);
+}
+
 .csl-route-wrap--paginated-discovery .csl-meta {
-  margin-top: 0.45rem;
-  gap: 0.3rem;
+  display: flex;
+  margin-top: 0.42rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .csl-route-wrap--paginated-discovery .csl-meta > span,
 .csl-route-wrap--paginated-discovery .csl-category-chip,
 .csl-route-wrap--paginated-discovery .csl-server-tags > a {
-  min-height: 1.7rem;
-  padding-block: 0.2rem;
+  min-height: 1.55rem;
+  padding: 0.16rem 0.38rem;
   font-size: var(--font-down-2);
+  line-height: 1.1;
+  border-radius: 999px;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-tags {
-  margin-top: 0.35rem;
-  gap: 0.25rem;
+  display: flex;
+  min-width: 0;
+  margin-top: 0.32rem;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  gap: 0.22rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-tags > a {
+  flex: 0 0 auto;
+}
+
+.csl-route-wrap--paginated-discovery .csl-server-tags > a:nth-child(n + 4) {
+  display: none;
 }
 
 .csl-route-wrap--paginated-discovery .csl-description-link {
   display: none;
 }
 
+/* Compact footer / actions --------------------------------------------- */
 .csl-route-wrap--paginated-discovery .csl-server-card__body > footer {
   display: flex;
-  margin-top: 0.55rem;
-  padding-top: 0.5rem;
+  min-width: 0;
+  margin-top: 0.42rem;
+  padding-top: 0;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.55rem;
+  border-top: 0;
 }
 
 .csl-route-wrap--paginated-discovery .csl-owner {
   min-width: 0;
+  gap: 0.3rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-owner .avatar {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .csl-route-wrap--paginated-discovery .csl-owner__identity {
+  max-width: 20rem;
   overflow: hidden;
+  color: var(--primary-medium);
+  font-size: var(--font-down-2);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__actions {
   display: flex;
+  min-width: 0;
   flex: 0 0 auto;
   align-items: center;
-  gap: 0.3rem;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
 }
 
-.csl-route-wrap--paginated-discovery .csl-server-card__body nav a {
-  min-height: 2rem;
-  padding: 0.35rem 0.55rem;
+.csl-route-wrap--paginated-discovery .csl-server-card__actions a {
+  min-height: 1.9rem;
+  padding: 0.28rem 0.48rem;
+  gap: 0.28rem;
   font-size: var(--font-down-2);
+  border-radius: 0.42rem;
 }
 
+/* Metrics --------------------------------------------------------------- */
 .csl-route-wrap--paginated-discovery .csl-server-card__score {
   grid-area: score;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 0.68rem;
-  align-content: center;
-  gap: 0.38rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 0.62rem;
+  align-items: center;
+  gap: 0.3rem;
   background: color-mix(in srgb, var(--secondary) 94%, var(--primary) 6%);
-  border-inline-start: 1px solid var(--csl-shell-border, var(--primary-low));
+  border-inline-start: 1px solid color-mix(in srgb, var(--primary) 9%, transparent);
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__score > div {
   min-width: 0;
-  padding: 0.3rem 0.2rem;
+  padding: 0.22rem 0.15rem;
   text-align: center;
 }
 
+.csl-route-wrap--paginated-discovery .csl-server-card__score > div + div {
+  border-inline-start: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
 .csl-route-wrap--paginated-discovery .csl-server-card__score strong {
+  display: block;
+  overflow: hidden;
+  color: var(--primary);
   font-size: var(--font-0);
-  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .csl-route-wrap--paginated-discovery .csl-server-card__score span {
+  display: block;
+  margin-top: 0.12rem;
+  overflow: hidden;
+  color: var(--primary-medium);
   font-size: var(--font-down-3);
-  line-height: 1.15;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .csl-route-wrap--paginated-discovery .csl-rating {
-  grid-column: 1 / -1;
+  grid-column: auto;
 }
 
 .csl-route-wrap--paginated-discovery .csl-vote-button {
   grid-column: 1 / -1;
-  min-height: 2.15rem;
+  min-height: 2rem;
   margin: 0;
-  padding: 0.35rem 0.5rem;
+  padding: 0.3rem 0.48rem;
+  align-self: end;
+  justify-content: center;
   font-size: var(--font-down-2);
+  border-radius: 0.45rem;
 }
 
-@media (max-width: 850px) {
+/* Medium widths: metrics move beneath the information column without
+ * turning the row back into a large stacked card. */
+@media (max-width: 1100px) {
   .csl-route-wrap--paginated-discovery .csl-server-card {
-    grid-template-columns: 2.75rem minmax(0, 1fr);
+    grid-template-columns: 2.55rem 9rem minmax(0, 1fr);
     grid-template-areas:
-      "banner banner"
-      "rank body"
-      "score score";
-  }
-
-  .csl-route-wrap--paginated-discovery .csl-server-card__visual {
-    display: flex;
-    padding: 0.55rem 0.7rem 0.3rem;
-  }
-
-  .csl-route-wrap--paginated-discovery .csl-server-card__visual:has(.csl-server-card__fallback) {
-    display: none;
-  }
-
-  .csl-route-wrap--paginated-discovery .csl-ad-banner {
-    width: min(468px, 100%);
+      "rank visual body"
+      "rank visual score";
   }
 
   .csl-route-wrap--paginated-discovery .csl-server-card__score {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: center;
-    border-block-start: 1px solid var(--csl-shell-border, var(--primary-low));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(8.5rem, 0.9fr);
+    grid-template-rows: auto;
+    padding: 0.38rem 0.65rem 0.62rem;
+    background: transparent;
+    border-block-start: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
     border-inline-start: 0;
-  }
-
-  .csl-route-wrap--paginated-discovery .csl-rating {
-    grid-column: auto;
   }
 
   .csl-route-wrap--paginated-discovery .csl-vote-button {
     grid-column: auto;
-    width: 100%;
+    min-height: 1.9rem;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 760px) {
+  .csl-route-wrap--paginated-discovery .csl-server-list {
+    gap: 0.38rem;
+  }
+
   .csl-route-wrap--paginated-discovery .csl-server-card {
-    grid-template-columns: 2.45rem minmax(0, 1fr);
+    grid-template-columns: 2.25rem 6.8rem minmax(0, 1fr);
+    grid-template-areas:
+      "rank visual body"
+      "rank score score";
+    min-height: 0;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__visual {
+    padding: 0.5rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-ad-banner {
+    max-width: 5.9rem;
+    height: 3rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__fallback {
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
   .csl-route-wrap--paginated-discovery .csl-server-card__body {
-    padding: 0.65rem 0.65rem 0.7rem;
+    padding: 0.6rem 0.62rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__body header p,
+  .csl-route-wrap--paginated-discovery .csl-server-tags {
+    display: none;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-meta {
+    margin-top: 0.34rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-meta > span:nth-of-type(n + 3) {
+    display: none;
   }
 
   .csl-route-wrap--paginated-discovery .csl-server-card__body > footer {
-    align-items: flex-start;
-    flex-direction: column;
+    margin-top: 0.35rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-owner {
+    display: none;
   }
 
   .csl-route-wrap--paginated-discovery .csl-server-card__actions {
-    width: 100%;
-    flex-wrap: wrap;
+    margin-inline-start: auto;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__actions a {
+    min-height: 1.8rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__score {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(7.5rem, 0.9fr);
+    padding: 0.42rem 0.55rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .csl-route-wrap--paginated-discovery .csl-server-card {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    grid-template-areas:
+      "rank body"
+      "visual visual"
+      "score score";
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-rank {
+    padding-inline: 0.05rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__body {
+    padding: 0.58rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__visual {
+    min-height: 2.8rem;
+    padding: 0.35rem 0.55rem;
+    justify-content: flex-start;
+    border-block-start: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+    border-inline-end: 0;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-ad-banner {
+    width: min(13rem, 100%);
+    max-width: none;
+    height: 2.2rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__fallback {
+    display: none !important;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-featured {
+    display: none;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-meta > span:nth-of-type(n + 2),
+  .csl-route-wrap--paginated-discovery .csl-category-chip ~ span {
+    display: none;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__body > footer {
+    justify-content: flex-end;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__actions a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-server-card__actions a {
+    width: 1.85rem;
+    min-width: 1.85rem;
+    min-height: 1.85rem;
+    padding: 0;
   }
 
   .csl-route-wrap--paginated-discovery .csl-server-card__score {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    padding: 0.55rem;
+    padding: 0.4rem 0.5rem 0.5rem;
   }
 
   .csl-route-wrap--paginated-discovery .csl-vote-button {
     grid-column: 1 / -1;
+    min-height: 1.9rem;
   }
 }
