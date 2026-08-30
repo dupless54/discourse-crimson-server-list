@@ -34,7 +34,8 @@ export default class CrimsonServerV3Nav extends Component {
   }
 
   @action
-  activate(tab) {
+  activate(tab, event) {
+    event?.preventDefault();
     this.activeTab = tab;
   }
 
