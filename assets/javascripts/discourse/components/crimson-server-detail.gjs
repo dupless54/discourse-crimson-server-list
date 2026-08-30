@@ -1,23 +1,25 @@
 import Component from "@glimmer/component";
 import { fn } from "@ember/helper";
 import { action } from "@ember/object";
+import { service } from "@ember/service";
 import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import CrimsonServerFormModal from "./modal/crimson-server-form";
 import CrimsonServerVerificationPanel from "./crimson-server-verification-panel";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
 export default class CrimsonServerDetail extends Component {
+  @service modal;
+
   @tracked server = this.args.model?.server || {};
   @tracked reviews = this.args.model?.reviews || [];
-  @tracked showEdit = false;
   @tracked busyAction = "";
   @tracked announcement = "";
   @tracked errorMessage = "";
   @tracked reviewRating = this.mineReview?.rating || 0;
   @tracked reviewBody = this.mineReview?.body || "";
-  @tracked editGameSlug = this.args.model?.server?.game_slug || "minecraft";
   @tracked claimStatus = this.args.model?.viewer?.claim_status || "";
 
   get viewer() {
@@ -63,26 +65,29 @@ export default class CrimsonServerDetail extends Component {
     return `${average} / 5`;
   }
 
-  get editGameFields() {
-    const game = this.games.find(
-      (candidate) => candidate.slug === this.editGameSlug,
-    );
-    const values =
-      this.editGameSlug === this.server.game_slug
-        ? this.server.game_details || {}
-        : {};
-
-    return (game?.fields || []).map((field) => ({
-      ...field,
-      inputName: `game_detail__${field.key}`,
-      value: values[field.key] ?? "",
-    }));
-  }
-
   @action
-  toggleEdit() {
-    this.showEdit = !this.showEdit;
+  openEdit() {
+    const previousSlug = this.server.slug;
+    const previousHost = this.server.host;
     this.clearMessages();
+
+    this.modal.show(CrimsonServerFormModal, {
+      model: {
+        mode: "edit",
+        games: this.games,
+        server: this.server,
+        onSaved: (server, response) => {
+          this.server = server;
+          this.announcement = response.message;
+
+          if (server.slug !== previousSlug) {
+            window.location.assign(server.detail_url);
+          } else if (server.host !== previousHost) {
+            window.location.reload();
+          }
+        },
+      },
+    });
   }
 
   @action
@@ -93,11 +98,6 @@ export default class CrimsonServerDetail extends Component {
   @action
   updateReviewBody(event) {
     this.reviewBody = event.currentTarget.value;
-  }
-
-  @action
-  updateEditGame(event) {
-    this.editGameSlug = event.currentTarget.value;
   }
 
   @action
@@ -163,43 +163,6 @@ export default class CrimsonServerDetail extends Component {
         { type: "POST" },
       );
       this.announcement = response.message;
-    } catch (error) {
-      this.errorMessage = this.errorText(error);
-    } finally {
-      this.busyAction = "";
-    }
-  }
-
-  @action
-  async updateServer(event) {
-    event.preventDefault();
-    if (this.busyAction) {
-      return;
-    }
-
-    const form = event.currentTarget;
-    const data = this.serverFormData(form);
-    const previousSlug = this.server.slug;
-    const previousHost = this.server.host;
-
-    this.busyAction = "edit";
-    this.clearMessages();
-
-    try {
-      const response = await ajax(
-        `/crimson-server-list/servers/${this.server.id}.json`,
-        { type: "PUT", data },
-      );
-      this.server = response.server;
-      this.editGameSlug = response.server.game_slug;
-      this.announcement = response.message;
-      this.showEdit = false;
-
-      if (response.server.slug !== previousSlug) {
-        window.location.assign(response.server.detail_url);
-      } else if (response.server.host !== previousHost) {
-        window.location.reload();
-      }
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
@@ -320,27 +283,6 @@ export default class CrimsonServerDetail extends Component {
     this.errorMessage = "";
   }
 
-  serverFormData(form) {
-    const data = Object.fromEntries(new FormData(form).entries());
-    const gameDetails = {};
-
-    for (const [key, value] of Object.entries(data)) {
-      if (key.startsWith("game_detail__")) {
-        const detailKey = key.slice("game_detail__".length);
-        const normalized = String(value || "").trim();
-        if (normalized) {
-          gameDetails[detailKey] = normalized;
-        }
-        delete data[key];
-      }
-    }
-
-    data.game_details = gameDetails;
-    data.monitoring_enabled = form.elements.monitoring_enabled.checked;
-    data.banner_url = form.elements.banner_url?.value?.trim() || "";
-    return data;
-  }
-
   errorText(error) {
     return (
       error?.jqXHR?.responseJSON?.errors?.join(" ") ||
@@ -456,7 +398,7 @@ export default class CrimsonServerDetail extends Component {
             {{#if this.server.website_url}}<a class="csl-button" href={{this.server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Web sitesi</a>{{/if}}
             {{#if this.server.discord_url}}<a class="csl-button" href={{this.server.discord_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Discord</a>{{/if}}
             {{#if this.viewer.can_edit}}
-              <button class="csl-button" type="button" {{on "click" this.toggleEdit}}>{{if this.showEdit "Düzenlemeyi kapat" "Sunucuyu düzenle"}}</button>
+              <button class="csl-button" type="button" {{on "click" this.openEdit}}>Sunucuyu düzenle</button>
             {{/if}}
             {{#if this.canRefresh}}
               <button class="csl-button" type="button" disabled={{eq this.busyAction "refresh"}} {{on "click" this.refreshStatus}}>Canlı durumu yenile</button>
@@ -483,73 +425,6 @@ export default class CrimsonServerDetail extends Component {
             @viewer={{this.viewer}}
             @onStateChange={{this.applyVerification}}
           />
-        {{/if}}
-
-        {{#if this.showEdit}}
-          <section class="csl-panel csl-detail-edit" aria-labelledby="csl-edit-title">
-            <header>
-              <div><p class="csl-eyebrow">LİSTE SAHİBİ</p><h2 id="csl-edit-title">Sunucu bilgilerini düzenle</h2></div>
-              <p>Adres veya sorgu portu değişirse canlı durum sıfırlanır ve güvenli kuyruk sorgusu yeniden çalışır.</p>
-            </header>
-
-            <form class="csl-form" {{on "submit" this.updateServer}}>
-              <label>
-                <span>Oyun</span>
-                <select name="game_slug" required {{on "change" this.updateEditGame}}>
-                  {{#each this.games as |game|}}
-                    <option value={{game.slug}} selected={{eq game.slug this.editGameSlug}}>{{game.icon}} {{game.name}}</option>
-                  {{/each}}
-                </select>
-              </label>
-              <label><span>Sunucu adı</span><input name="name" value={{this.server.name}} maxlength="100" required /></label>
-              <label class="csl-form__wide"><span>Kısa açıklama</span><input name="short_description" value={{this.server.short_description}} maxlength="180" required /></label>
-              <label><span>Oyuncu bağlantı adresi</span><input name="host" value={{this.server.host}} maxlength="255" required /></label>
-              <label><span>Oyuncu bağlantı portu</span><input name="port" value={{this.server.port}} type="number" min="1" max="65535" required /></label>
-              <label>
-                <span>Sorgu portu (isteğe bağlı)</span>
-                <input name="query_port" value={{this.server.query_port}} type="number" min="1" max="65535" placeholder="Boşsa bağlantı portu" />
-              </label>
-              <label><span>Dil</span><input name="language" value={{this.server.language}} maxlength="60" /></label>
-              <label><span>Ülke kodu</span><input name="country_code" value={{this.server.country_code}} maxlength="2" /></label>
-              <label><span>Sürüm</span><input name="version" value={{this.server.version}} maxlength="60" /></label>
-              <label><span>Oyun modu</span><input name="mode" value={{this.server.mode}} maxlength="60" /></label>
-              <label class="csl-form__wide">
-                <span>Etiketler</span>
-                <input name="tags" value={{this.server.tags_csv}} maxlength="300" placeholder="pvp, türkçe, yüksek-exp" />
-                <small>En fazla 8 etiket; virgülle ayır.</small>
-              </label>
-              {{#if this.editGameFields.length}}
-                <div class="csl-form-section csl-form__wide">
-                  <strong>Oyuna özel bilgiler</strong>
-                  <span>Level/CAP, oranlar ve oyun türüne özgü değerler.</span>
-                </div>
-                {{#each this.editGameFields as |field|}}
-                  <label>
-                    <span>{{field.label}}{{#if field.unit}} ({{field.unit}}){{/if}}</span>
-                    <input
-                      name={{field.inputName}}
-                      value={{field.value}}
-                      type={{field.type}}
-                      min={{field.min}}
-                      max={{field.max}}
-                      step={{field.step}}
-                      maxlength="100"
-                      placeholder={{field.placeholder}}
-                    />
-                  </label>
-                {{/each}}
-              {{/if}}
-              <label class="csl-form__wide"><span>Web sitesi</span><input name="website_url" value={{this.server.website_url}} type="url" /></label>
-              <label class="csl-form__wide"><span>Discord daveti</span><input name="discord_url" value={{this.server.discord_url}} type="url" /></label>
-              <label class="csl-form__wide"><span>Hareketli reklam bannerı (önerilen 468×60 GIF/WebP)</span><input name="banner_url" value={{this.server.banner_url}} type="text" inputmode="url" autocomplete="off" /></label>
-              <label class="csl-form__wide"><span>Detaylı açıklama</span><textarea name="description" value={{this.server.description}} maxlength="4000" rows="7"></textarea></label>
-              <label class="csl-check csl-form__wide"><input name="monitoring_enabled" type="checkbox" checked={{this.server.monitoring_enabled}} /><span>Güvenli canlı durum sorgusunu etkin tut</span></label>
-              <div class="csl-form__actions csl-form__wide">
-                <button class="csl-button" type="button" {{on "click" this.toggleEdit}}>Vazgeç</button>
-                <button class="csl-button csl-button--primary" type="submit" disabled={{eq this.busyAction "edit"}}>Değişiklikleri kaydet</button>
-              </div>
-            </form>
-          </section>
         {{/if}}
 
         <div class="csl-detail-grid">
