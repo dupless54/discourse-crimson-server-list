@@ -1,6 +1,6 @@
 import { click, render } from "@ember/test-helpers";
-import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
+import { setupRenderingTest } from "discourse/tests/helpers/component-test";
 import CrimsonServerV3Nav from "discourse/plugins/discourse-crimson-server-list/discourse/components/crimson-server-v3-nav";
 
 module("Integration | Component | crimson-server-v3-nav", function (hooks) {
