@@ -38,7 +38,7 @@ export default class CrimsonServerFeaturedStrip extends Component {
 
   statusLabel(status) {
     const normalizedStatus = FEATURED_STATUSES.has(status) ? status : "unknown";
-    return i18n(`crimson_server_list.v3.featured_${normalizedStatus}`);
+    return i18n(`crimson_server_list.uptime.status_${normalizedStatus}`);
   }
 
   <template>
