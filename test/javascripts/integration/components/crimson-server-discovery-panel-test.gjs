@@ -91,11 +91,17 @@ module("Integration | Component | crimson-server-discovery-panel", function (hoo
 
   hooks.beforeEach(function () {
     this.previousUrl = `${window.location.pathname}${window.location.search}`;
+    this.siteSettings = this.owner.lookup("service:site-settings");
+    this.previousFollowsEnabled =
+      this.siteSettings.crimson_server_list_follows_enabled;
+    this.siteSettings.crimson_server_list_follows_enabled = false;
     this.set("model", modelFixture());
   });
 
   hooks.afterEach(function () {
     window.history.replaceState(window.history.state, "", this.previousUrl);
+    this.siteSettings.crimson_server_list_follows_enabled =
+      this.previousFollowsEnabled;
   });
 
   test("uses authoritative filtered pagination and replaces the legacy catalogue", async function (assert) {
@@ -252,5 +258,98 @@ module("Integration | Component | crimson-server-discovery-panel", function (hoo
     assert
       .dom(".csl-discovery-shell .csl-vote-button")
       .hasText("Bugün oylandı");
+  });
+
+  test("loads card favorites once and keeps mutations server-authoritative", async function (assert) {
+    let favoriteReads = 0;
+    let additions = 0;
+    let removals = 0;
+
+    this.siteSettings.crimson_server_list_follows_enabled = true;
+    window.history.replaceState(window.history.state, "", "/servers");
+
+    pretender.get("/crimson-server-list/discovery.json", () =>
+      response({
+        servers: [
+          serverFixture(41, "Favorite One"),
+          serverFixture(42, "Favorite Two"),
+        ],
+        pagination: {
+          page: 1,
+          per_page: 24,
+          total: 2,
+          total_pages: 1,
+          has_more: false,
+        },
+      }),
+    );
+
+    pretender.get("/crimson-server-list/me/follows.json", () => {
+      favoriteReads += 1;
+      return response({
+        follows: [
+          {
+            server_id: 42,
+            favorited: true,
+            notifications_enabled: false,
+          },
+        ],
+      });
+    });
+
+    pretender.put("/crimson-server-list/servers/41/follow.json", () => {
+      additions += 1;
+      return response({
+        server_id: 41,
+        favorited: true,
+        notifications_enabled: false,
+      });
+    });
+
+    pretender.delete("/crimson-server-list/servers/42/follow.json", () => {
+      removals += 1;
+      return response({
+        server_id: 42,
+        favorited: false,
+        notifications_enabled: false,
+      });
+    });
+
+    await render(
+      <template>
+        <CrimsonServerDiscoveryPanel @model={{this.model}} />
+      </template>,
+    );
+    await settled();
+
+    assert.strictEqual(
+      favoriteReads,
+      1,
+      "all rendered server cards share one private favorites bootstrap request",
+    );
+    assert.dom(".csl-card-favorite").exists({ count: 2 });
+    assert
+      .dom('.csl-card-favorite[data-server-id="41"]')
+      .hasAttribute("aria-pressed", "false");
+    assert
+      .dom('.csl-card-favorite[data-server-id="42"]')
+      .hasAttribute("aria-pressed", "true");
+
+    await click('.csl-card-favorite[data-server-id="41"]');
+    await settled();
+
+    assert.strictEqual(additions, 1, "adding uses one server-authoritative mutation");
+    assert
+      .dom('.csl-card-favorite[data-server-id="41"]')
+      .hasAttribute("aria-pressed", "true");
+
+    await click('.csl-card-favorite[data-server-id="42"]');
+    await settled();
+
+    assert.strictEqual(removals, 1, "removing uses one server-authoritative mutation");
+    assert
+      .dom('.csl-card-favorite[data-server-id="42"]')
+      .hasAttribute("aria-pressed", "false");
+    assert.strictEqual(favoriteReads, 1, "mutations do not refetch the favorite list");
   });
 });
