@@ -1,13 +1,13 @@
 import Component from "@glimmer/component";
 import { concat, fn } from "@ember/helper";
 import { action } from "@ember/object";
+import { scheduleOnce } from "@ember/runloop";
 import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { i18n } from "discourse-i18n";
 
 export default class CrimsonReportModeration extends Component {
-  @tracked isOpen = false;
   @tracked isLoading = false;
   @tracked hasLoaded = false;
   @tracked reports = [];
@@ -15,18 +15,16 @@ export default class CrimsonReportModeration extends Component {
   @tracked message = "";
   @tracked errorMessage = "";
 
-  get isAdmin() {
-    return Boolean(this.args.viewer?.is_admin);
+  constructor(owner, args) {
+    super(owner, args);
+
+    if (this.isAdmin) {
+      scheduleOnce("afterRender", this, this.loadReports);
+    }
   }
 
-  @action
-  async toggle() {
-    this.isOpen = !this.isOpen;
-    this.errorMessage = "";
-
-    if (this.isOpen && !this.hasLoaded) {
-      await this.loadReports();
-    }
+  get isAdmin() {
+    return Boolean(this.args.viewer?.is_admin);
   }
 
   @action
@@ -44,6 +42,7 @@ export default class CrimsonReportModeration extends Component {
     await this.moderate(report, "dismissed");
   }
 
+  @action
   async loadReports() {
     if (this.isLoading) {
       return;
@@ -98,28 +97,21 @@ export default class CrimsonReportModeration extends Component {
   <template>
     {{#if this.isAdmin}}
       <section class="csl-panel csl-report-moderation" aria-labelledby="csl-report-moderation-title">
-        <header>
+        <header class="csl-v3-panel-heading">
           <div>
             <p class="csl-eyebrow">{{i18n "crimson_server_list.reporting.admin_eyebrow"}}</p>
             <h2 id="csl-report-moderation-title">{{i18n "crimson_server_list.reporting.admin_title"}}</h2>
+            <p>{{i18n "crimson_server_list.v3_admin.reports_description"}}</p>
           </div>
-          {{#if this.hasLoaded}}
-            <p>{{i18n "crimson_server_list.reporting.pending_count" count=this.reports.length}}</p>
-          {{/if}}
-        </header>
-
-        <div class="csl-form__actions">
-          <button class="csl-button" type="button" aria-expanded={{this.isOpen}} {{on "click" this.toggle}}>
-            {{if this.isOpen
-              (i18n "crimson_server_list.reporting.admin_close")
-              (i18n "crimson_server_list.reporting.admin_open")}}
-          </button>
-          {{#if this.isOpen}}
+          <div class="csl-v3-panel-heading__actions">
+            {{#if this.hasLoaded}}
+              <span class="csl-v3-panel-count">{{i18n "crimson_server_list.reporting.pending_count" count=this.reports.length}}</span>
+            {{/if}}
             <button class="csl-button" type="button" disabled={{this.isLoading}} {{on "click" this.reload}}>
               {{i18n "crimson_server_list.reporting.reload"}}
             </button>
-          {{/if}}
-        </div>
+          </div>
+        </header>
 
         {{#if this.message}}
           <p class="csl-notice csl-notice--success" role="status">{{this.message}}</p>
@@ -128,10 +120,13 @@ export default class CrimsonReportModeration extends Component {
           <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
         {{/if}}
 
-        {{#if this.isOpen}}
-          {{#if this.isLoading}}
-            <p class="csl-empty csl-empty--compact">{{i18n "crimson_server_list.reporting.loading"}}</p>
-          {{else}}
+        {{#if this.isLoading}}
+          <div class="csl-v3-tab-loading" role="status">
+            <span class="csl-v3-loading-dot" aria-hidden="true"></span>
+            {{i18n "crimson_server_list.reporting.loading"}}
+          </div>
+        {{else}}
+          <div class="csl-v3-report-list">
             {{#each this.reports as |report|}}
               <article class="csl-pending-row csl-report-row">
                 <div>
@@ -149,23 +144,21 @@ export default class CrimsonReportModeration extends Component {
                     type="button"
                     disabled={{this.busyReportId}}
                     {{on "click" (fn this.dismiss report)}}
-                  >
-                    {{i18n "crimson_server_list.reporting.dismiss"}}
-                  </button>
+                  >{{i18n "crimson_server_list.reporting.dismiss"}}</button>
                   <button
                     class="csl-button csl-button--primary"
                     type="button"
                     disabled={{this.busyReportId}}
                     {{on "click" (fn this.resolve report)}}
-                  >
-                    {{i18n "crimson_server_list.reporting.resolve"}}
-                  </button>
+                  >{{i18n "crimson_server_list.reporting.resolve"}}</button>
                 </div>
               </article>
             {{else}}
-              <p class="csl-empty csl-empty--compact">{{i18n "crimson_server_list.reporting.empty"}}</p>
+              <div class="csl-empty csl-empty--compact csl-v3-tab-empty">
+                <p>{{i18n "crimson_server_list.reporting.empty"}}</p>
+              </div>
             {{/each}}
-          {{/if}}
+          </div>
         {{/if}}
       </section>
     {{/if}}
