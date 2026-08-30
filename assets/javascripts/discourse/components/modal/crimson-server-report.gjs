@@ -41,8 +41,10 @@ export default class CrimsonServerReportModal extends Component {
       return;
     }
 
-    const submitter = event?.currentTarget || event?.target;
-    const form = submitter?.form || submitter;
+    const form =
+      event?.target?.closest?.("form") ||
+      event?.currentTarget?.form ||
+      event?.currentTarget;
     if (!(form instanceof HTMLFormElement)) {
       this.errorMessage = i18n("crimson_server_list.reporting.generic_error");
       return;
