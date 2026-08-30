@@ -103,8 +103,10 @@ export default class CrimsonServerFormModal extends Component {
       return;
     }
 
-    const submitter = event?.currentTarget || event?.target;
-    const form = submitter?.form || submitter;
+    const form =
+      event?.target?.closest?.("form") ||
+      event?.currentTarget?.form ||
+      event?.currentTarget;
     if (!(form instanceof HTMLFormElement)) {
       this.errorMessage = i18n("crimson_server_list.server_form.generic_error");
       return;
