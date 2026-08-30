@@ -13,6 +13,7 @@ export default class CrimsonServerFavoriteAction extends Component {
   @tracked favorited = false;
   @tracked notificationsEnabled = false;
   @tracked isLoading = false;
+  @tracked loadFailed = false;
   @tracked busyAction = "";
   @tracked errorMessage = "";
 
@@ -68,6 +69,7 @@ export default class CrimsonServerFavoriteAction extends Component {
     }
 
     this.isLoading = true;
+    this.loadFailed = false;
     this.errorMessage = "";
 
     try {
@@ -77,6 +79,7 @@ export default class CrimsonServerFavoriteAction extends Component {
       this.favorited = Boolean(response.favorited);
       this.notificationsEnabled = Boolean(response.notifications_enabled);
     } catch (error) {
+      this.loadFailed = true;
       this.errorMessage = this.errorText(error);
     } finally {
       this.isLoading = false;
@@ -180,7 +183,7 @@ export default class CrimsonServerFavoriteAction extends Component {
         {{#if this.errorMessage}}
           <div class="csl-favorite-action__error csl-v3-panel-error">
             <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
-            {{#if this.isLoading}}
+            {{#if this.loadFailed}}
               <DButton
                 @action={{this.loadState}}
                 @label="crimson_server_list.owner_panel.retry"
