@@ -1,6 +1,19 @@
 en:
   js:
     crimson_server_list:
+      v3:
+        navigation_label: "Server list sections"
+        discover: "Discover"
+        favorites: "My favorites"
+        owned: "My servers"
+        administration: "Administration"
+        featured_title: "Featured Servers"
+        featured_eyebrow: "COMMUNITY PICKS"
+        featured_open: "Open server"
+        featured_online: "Online"
+        featured_offline: "Offline"
+        featured_players: "players"
+        featured_reviews: "reviews"
       verification:
         badge: "Verified"
         badge_title: "This listing owner proved control of the server hostname through DNS."
