@@ -20,7 +20,7 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
       this.previousFollowsEnabled;
   });
 
-  test("lazy-loads favorites, updates notifications, and removes a favorite", async function (assert) {
+  test("loads favorites on mount, updates notifications, and removes a favorite", async function (assert) {
     let listReads = 0;
     let removals = 0;
     const notificationUpdates = [];
@@ -75,17 +75,12 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
     await render(
       <template>
         <CrimsonServerFavoritesPanel @viewer={{this.viewer}} />
-      </template>
+      </template>,
     );
     await settled();
 
-    assert.strictEqual(listReads, 0, "closed panel does not request the private list");
-    assert.dom(".csl-favorite-card").doesNotExist();
-
-    await click(".csl-favorites-panel__toggle");
-    await settled();
-
-    assert.strictEqual(listReads, 1, "opening the panel performs one private-list request");
+    assert.strictEqual(listReads, 1, "mounting the active tab performs one private-list request");
+    assert.dom(".csl-favorites-panel__toggle").doesNotExist();
     assert.dom(".csl-favorite-card").exists({ count: 1 });
     assert.dom(".csl-favorite-card h3 a").hasText("CrimsonCraft");
     assert
@@ -95,11 +90,7 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
     await click(".csl-favorite-card__notification");
     await settled();
 
-    assert.deepEqual(
-      notificationUpdates,
-      ["true"],
-      "notification preference is updated through the private follow API",
-    );
+    assert.deepEqual(notificationUpdates, ["true"]);
     assert
       .dom(".csl-favorite-card__notification")
       .hasAttribute("aria-pressed", "true");
@@ -107,14 +98,9 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
     await click(".csl-favorite-card__remove");
     await settled();
 
-    assert.strictEqual(removals, 1, "removal uses one delete mutation");
+    assert.strictEqual(removals, 1);
     assert.dom(".csl-favorite-card").doesNotExist();
-
-    await click(".csl-favorites-panel__toggle");
-    await click(".csl-favorites-panel__toggle");
-    await settled();
-
-    assert.strictEqual(listReads, 1, "reopening an already loaded panel does not refetch");
+    assert.strictEqual(listReads, 1, "mutations do not refetch the private list");
   });
 
   test("does not render or request the private list for guests", async function (assert) {
@@ -129,7 +115,7 @@ module("Integration | Component | crimson-server-favorites-panel", function (hoo
     await render(
       <template>
         <CrimsonServerFavoritesPanel @viewer={{this.viewer}} />
-      </template>
+      </template>,
     );
     await settled();
 
