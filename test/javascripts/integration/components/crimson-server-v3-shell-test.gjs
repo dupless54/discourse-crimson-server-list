@@ -46,10 +46,11 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     window.history.replaceState(window.history.state, "", this.previousUrl);
   });
 
-  test("renders exactly one real route panel and switches tabs without residual cards", async function (assert) {
+  test("renders exactly one real route panel and refreshes private panels on remount", async function (assert) {
     let discoveryReads = 0;
     let favoriteReads = 0;
     let ownedReads = 0;
+    let adminBootstrapReads = 0;
     let reportReads = 0;
 
     pretender.get("/crimson-server-list/discovery.json", () => {
@@ -93,6 +94,18 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
       });
     });
 
+    pretender.get("/crimson-server-list/bootstrap.json", () => {
+      adminBootstrapReads += 1;
+      return response({
+        viewer: this.model.viewer,
+        games: [],
+        tags: [],
+        stats: this.model.stats,
+        pending_servers: [],
+        pending_claims: [],
+      });
+    });
+
     pretender.get("/crimson-server-list/admin/reports.json", () => {
       reportReads += 1;
       return response({ reports: [] });
@@ -108,6 +121,7 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     assert.strictEqual(discoveryReads, 1);
     assert.strictEqual(favoriteReads, 0);
     assert.strictEqual(ownedReads, 0);
+    assert.strictEqual(adminBootstrapReads, 0);
     assert.strictEqual(reportReads, 0);
     assert.dom("#csl-v3-discover").exists();
     assert.dom("#csl-v3-favorites").doesNotExist();
@@ -138,6 +152,7 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     assert.dom("#csl-v3-owned").doesNotExist();
     assert.dom("#csl-v3-admin").exists();
     assert.dom("#csl-v3-discover").doesNotExist();
+    assert.strictEqual(adminBootstrapReads, 1, "the admin queue is refreshed on mount");
     assert.strictEqual(reportReads, 1);
 
     await click("#csl-v3-tab-discover");
@@ -154,6 +169,19 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     assert.dom("#csl-v3-favorites").exists();
     assert.strictEqual(favoriteReads, 2, "revisiting Favorites remounts only that active panel");
     assert.strictEqual(ownedReads, 1);
+    assert.strictEqual(adminBootstrapReads, 1);
     assert.strictEqual(reportReads, 1);
+
+    await click("#csl-v3-tab-administration");
+    await settled();
+
+    assert.dom("#csl-v3-favorites").doesNotExist();
+    assert.dom("#csl-v3-admin").exists();
+    assert.strictEqual(
+      adminBootstrapReads,
+      2,
+      "revisiting Administration fetches a fresh authoritative queue",
+    );
+    assert.strictEqual(reportReads, 2, "the report queue also refreshes on remount");
   });
 });
