@@ -1,5 +1,6 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
+import { scheduleOnce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
@@ -12,7 +13,7 @@ export default class CrimsonServerFavoriteAction extends Component {
 
   @tracked favorited = false;
   @tracked notificationsEnabled = false;
-  @tracked isLoading = false;
+  @tracked isLoading = true;
   @tracked loadFailed = false;
   @tracked busyAction = "";
   @tracked errorMessage = "";
@@ -21,7 +22,9 @@ export default class CrimsonServerFavoriteAction extends Component {
     super(owner, args);
 
     if (this.canRender && this.server.id) {
-      void this.loadState();
+      scheduleOnce("afterRender", this, this.loadState);
+    } else {
+      this.isLoading = false;
     }
   }
 
@@ -64,10 +67,6 @@ export default class CrimsonServerFavoriteAction extends Component {
 
   @action
   async loadState() {
-    if (this.isLoading) {
-      return;
-    }
-
     this.isLoading = true;
     this.loadFailed = false;
     this.errorMessage = "";
