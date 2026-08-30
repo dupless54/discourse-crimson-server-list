@@ -1,6 +1,19 @@
 tr_TR:
   js:
     crimson_server_list:
+      v3:
+        navigation_label: "Sunucu listesi bölümleri"
+        discover: "Keşfet"
+        favorites: "Favorilerim"
+        owned: "Sunucularım"
+        administration: "Yönetim"
+        featured_title: "Öne Çıkan Sunucular"
+        featured_eyebrow: "TOPLULUK SEÇKİSİ"
+        featured_open: "Sunucuyu aç"
+        featured_online: "Çevrimiçi"
+        featured_offline: "Çevrimdışı"
+        featured_players: "oyuncu"
+        featured_reviews: "değerlendirme"
       verification:
         badge: "Doğrulanmış"
         badge_title: "Bu ilanın sahibi, sunucu alan adını DNS üzerinden kontrol ettiğini kanıtladı."
