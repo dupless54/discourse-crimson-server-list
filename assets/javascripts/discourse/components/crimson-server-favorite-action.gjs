@@ -2,8 +2,9 @@ import Component from "@glimmer/component";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
-import { on } from "@ember/modifier";
 import { ajax } from "discourse/lib/ajax";
+import { eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 
 export default class CrimsonServerFavoriteAction extends Component {
@@ -12,7 +13,7 @@ export default class CrimsonServerFavoriteAction extends Component {
   @tracked favorited = false;
   @tracked notificationsEnabled = false;
   @tracked isLoading = false;
-  @tracked isBusy = false;
+  @tracked busyAction = "";
   @tracked errorMessage = "";
 
   constructor(owner, args) {
@@ -41,22 +42,10 @@ export default class CrimsonServerFavoriteAction extends Component {
   }
 
   get isDisabled() {
-    return this.isLoading || this.isBusy;
-  }
-
-  get ariaPressed() {
-    return this.favorited ? "true" : "false";
-  }
-
-  get notificationAriaPressed() {
-    return this.notificationsEnabled ? "true" : "false";
+    return this.isLoading || Boolean(this.busyAction);
   }
 
   get buttonLabel() {
-    if (this.isBusy) {
-      return i18n("crimson_server_list.favorites.saving");
-    }
-
     return i18n(
       this.favorited
         ? "crimson_server_list.favorites.remove"
@@ -72,7 +61,12 @@ export default class CrimsonServerFavoriteAction extends Component {
     );
   }
 
+  @action
   async loadState() {
+    if (this.isLoading) {
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = "";
 
@@ -91,11 +85,11 @@ export default class CrimsonServerFavoriteAction extends Component {
 
   @action
   async toggleFavorite() {
-    if (this.isBusy || this.isLoading) {
+    if (this.isDisabled) {
       return;
     }
 
-    this.isBusy = true;
+    this.busyAction = "favorite";
     this.errorMessage = "";
 
     try {
@@ -108,17 +102,17 @@ export default class CrimsonServerFavoriteAction extends Component {
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
-      this.isBusy = false;
+      this.busyAction = "";
     }
   }
 
   @action
   async toggleNotifications() {
-    if (this.isBusy || this.isLoading || !this.favorited) {
+    if (this.isDisabled || !this.favorited) {
       return;
     }
 
-    this.isBusy = true;
+    this.busyAction = "notifications";
     this.errorMessage = "";
 
     try {
@@ -134,7 +128,7 @@ export default class CrimsonServerFavoriteAction extends Component {
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
-      this.isBusy = false;
+      this.busyAction = "";
     }
   }
 
@@ -156,19 +150,14 @@ export default class CrimsonServerFavoriteAction extends Component {
         </div>
 
         <div class="csl-favorite-action__controls">
-          <button
+          <DButton
+            @action={{this.toggleFavorite}}
+            @translatedLabel={{if this.isLoading (i18n "crimson_server_list.favorites.loading_state") this.buttonLabel}}
+            @disabled={{this.isDisabled}}
+            @isLoading={{eq this.busyAction "favorite"}}
+            @ariaPressed={{this.favorited}}
             class="csl-button csl-favorite-action__button {{if this.favorited "is-active" ""}}"
-            type="button"
-            disabled={{this.isDisabled}}
-            aria-pressed={{this.ariaPressed}}
-            {{on "click" this.toggleFavorite}}
-          >
-            {{#if this.isLoading}}
-              {{i18n "crimson_server_list.favorites.loading_state"}}
-            {{else}}
-              {{this.buttonLabel}}
-            {{/if}}
-          </button>
+          />
 
           {{#if this.favorited}}
             <div class="csl-notification-preference">
@@ -176,21 +165,29 @@ export default class CrimsonServerFavoriteAction extends Component {
                 <strong>{{i18n "crimson_server_list.notifications.preference_title"}}</strong>
                 <span>{{i18n "crimson_server_list.notifications.preference_description"}}</span>
               </div>
-              <button
+              <DButton
+                @action={{this.toggleNotifications}}
+                @translatedLabel={{this.notificationLabel}}
+                @disabled={{this.isDisabled}}
+                @isLoading={{eq this.busyAction "notifications"}}
+                @ariaPressed={{this.notificationsEnabled}}
                 class="csl-button csl-notification-preference__button {{if this.notificationsEnabled "is-active" ""}}"
-                type="button"
-                disabled={{this.isDisabled}}
-                aria-pressed={{this.notificationAriaPressed}}
-                {{on "click" this.toggleNotifications}}
-              >
-                {{this.notificationLabel}}
-              </button>
+              />
             </div>
           {{/if}}
         </div>
 
         {{#if this.errorMessage}}
-          <p class="csl-notice csl-notice--error csl-favorite-action__error" role="alert">{{this.errorMessage}}</p>
+          <div class="csl-favorite-action__error csl-v3-panel-error">
+            <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
+            {{#if this.isLoading}}
+              <DButton
+                @action={{this.loadState}}
+                @label="crimson_server_list.owner_panel.retry"
+                class="csl-button"
+              />
+            {{/if}}
+          </div>
         {{/if}}
       </section>
     {{/if}}
