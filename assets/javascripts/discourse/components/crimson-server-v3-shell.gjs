@@ -31,29 +31,14 @@ const HASH_TABS = {
 
 export default class CrimsonServerV3Shell extends Component {
   @tracked activeTab = "discover";
-  @tracked visitedTabs = new Set(["discover"]);
 
   constructor(owner, args) {
     super(owner, args);
-    const initialTab = this.tabFromLocation();
-    this.activeTab = initialTab;
-    this.visitedTabs = new Set(["discover", initialTab]);
+    this.activeTab = this.tabFromLocation();
   }
 
   get viewer() {
     return this.args.model?.viewer || {};
-  }
-
-  get hasVisitedFavorites() {
-    return this.visitedTabs.has("favorites");
-  }
-
-  get hasVisitedOwned() {
-    return this.visitedTabs.has("owned");
-  }
-
-  get hasVisitedAdministration() {
-    return this.visitedTabs.has("administration");
   }
 
   isAllowed(tab) {
@@ -93,12 +78,11 @@ export default class CrimsonServerV3Shell extends Component {
 
   @action
   activateTab(tab) {
-    if (!this.isAllowed(tab)) {
+    if (!this.isAllowed(tab) || this.activeTab === tab) {
       return;
     }
 
     this.activeTab = tab;
-    this.visitedTabs = new Set([...this.visitedTabs, tab]);
     this.syncLocation(tab);
   }
 
@@ -115,51 +99,51 @@ export default class CrimsonServerV3Shell extends Component {
         @onActivate={{this.activateTab}}
       />
 
-      <section
-        id="csl-v3-discover"
-        class="csl-v3-route-section csl-v3-route-section--discover"
-        aria-labelledby="csl-v3-tab-discover"
-        hidden={{if (eq this.activeTab "discover") false true}}
-      >
-        <CrimsonServerList
-          @model={{@model}}
-          @onOpenFavorites={{this.openFavorites}}
-        />
-        <CrimsonServerFeaturedStrip @servers={{@model.servers}} />
-        <CrimsonServerDiscoveryPanel @model={{@model}} />
-      </section>
+      {{#if (eq this.activeTab "discover")}}
+        <section
+          id="csl-v3-discover"
+          class="csl-v3-route-section csl-v3-route-section--discover is-active"
+          aria-labelledby="csl-v3-tab-discover"
+        >
+          <CrimsonServerList
+            @model={{@model}}
+            @onOpenFavorites={{this.openFavorites}}
+          />
+          <CrimsonServerFeaturedStrip @servers={{@model.servers}} />
+          <CrimsonServerDiscoveryPanel @model={{@model}} />
+        </section>
+      {{/if}}
 
-      {{#if this.viewer.logged_in}}
-        {{#if this.hasVisitedFavorites}}
+      {{#if (eq this.activeTab "favorites")}}
+        {{#if this.viewer.logged_in}}
           <section
             id="csl-v3-favorites"
-            class="csl-v3-route-section csl-v3-route-section--secondary"
+            class="csl-v3-route-section csl-v3-route-section--secondary is-active"
             aria-labelledby="csl-v3-tab-favorites"
-            hidden={{if (eq this.activeTab "favorites") false true}}
           >
             <CrimsonServerFavoritesPanel @viewer={{this.viewer}} />
           </section>
         {{/if}}
+      {{/if}}
 
-        {{#if this.hasVisitedOwned}}
+      {{#if (eq this.activeTab "owned")}}
+        {{#if this.viewer.logged_in}}
           <section
             id="csl-v3-owned"
-            class="csl-v3-route-section csl-v3-route-section--secondary"
+            class="csl-v3-route-section csl-v3-route-section--secondary is-active"
             aria-labelledby="csl-v3-tab-owned"
-            hidden={{if (eq this.activeTab "owned") false true}}
           >
             <CrimsonServerOwnerPanel @viewer={{this.viewer}} />
           </section>
         {{/if}}
       {{/if}}
 
-      {{#if this.viewer.is_admin}}
-        {{#if this.hasVisitedAdministration}}
+      {{#if (eq this.activeTab "administration")}}
+        {{#if this.viewer.is_admin}}
           <section
             id="csl-v3-admin"
-            class="csl-v3-route-section csl-v3-route-section--secondary csl-v3-admin-stack"
+            class="csl-v3-route-section csl-v3-route-section--secondary csl-v3-admin-stack is-active"
             aria-labelledby="csl-v3-tab-administration"
-            hidden={{if (eq this.activeTab "administration") false true}}
           >
             <CrimsonServerApprovalPanel @model={{@model}} />
             <CrimsonReportModeration @viewer={{this.viewer}} />
