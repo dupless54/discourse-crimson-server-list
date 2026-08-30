@@ -14,6 +14,7 @@ register_asset "stylesheets/crimson-server-verification.scss"
 register_asset "stylesheets/crimson-server-uptime.scss"
 register_asset "stylesheets/crimson-server-favorites.scss"
 register_asset "stylesheets/crimson-server-v3.scss"
+register_asset "stylesheets/crimson-server-v3-featured.scss"
 
 module ::CrimsonServerList
   PLUGIN_NAME = "discourse-crimson-server-list"
