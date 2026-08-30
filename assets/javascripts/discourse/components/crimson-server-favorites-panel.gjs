@@ -1,12 +1,12 @@
 import Component from "@glimmer/component";
-import { fn } from "@ember/helper";
+import { concat, fn } from "@ember/helper";
 import { action } from "@ember/object";
 import { scheduleOnce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
-import { on } from "@ember/modifier";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
@@ -15,7 +15,7 @@ export default class CrimsonServerFavoritesPanel extends Component {
 
   @tracked isLoaded = false;
   @tracked isLoading = false;
-  @tracked busyServerId = null;
+  @tracked busyKey = "";
   @tracked follows = [];
   @tracked errorMessage = "";
 
@@ -40,6 +40,10 @@ export default class CrimsonServerFavoritesPanel extends Component {
     });
   }
 
+  get mutationBusy() {
+    return Boolean(this.busyKey);
+  }
+
   @action
   async loadFavorites() {
     if (this.isLoading) {
@@ -62,11 +66,11 @@ export default class CrimsonServerFavoritesPanel extends Component {
 
   @action
   async toggleNotifications(follow) {
-    if (this.busyServerId) {
+    if (this.mutationBusy) {
       return;
     }
 
-    this.busyServerId = follow.server_id;
+    this.busyKey = `notification-${follow.server_id}`;
     this.errorMessage = "";
 
     try {
@@ -88,17 +92,17 @@ export default class CrimsonServerFavoritesPanel extends Component {
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
-      this.busyServerId = null;
+      this.busyKey = "";
     }
   }
 
   @action
   async removeFavorite(follow) {
-    if (this.busyServerId) {
+    if (this.mutationBusy) {
       return;
     }
 
-    this.busyServerId = follow.server_id;
+    this.busyKey = `remove-${follow.server_id}`;
     this.errorMessage = "";
 
     try {
@@ -112,12 +116,8 @@ export default class CrimsonServerFavoritesPanel extends Component {
     } catch (error) {
       this.errorMessage = this.errorText(error);
     } finally {
-      this.busyServerId = null;
+      this.busyKey = "";
     }
-  }
-
-  notificationAriaPressed(follow) {
-    return follow.notifications_enabled ? "true" : "false";
   }
 
   notificationLabel(follow) {
@@ -160,9 +160,13 @@ export default class CrimsonServerFavoritesPanel extends Component {
         {{#if this.errorMessage}}
           <div class="csl-v3-panel-error">
             <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
-            <button class="csl-button" type="button" {{on "click" this.loadFavorites}}>
-              {{i18n "crimson_server_list.owner_panel.retry"}}
-            </button>
+            {{#unless this.isLoaded}}
+              <DButton
+                @action={{this.loadFavorites}}
+                @label="crimson_server_list.owner_panel.retry"
+                class="csl-button"
+              />
+            {{/unless}}
           </div>
         {{else if this.isLoading}}
           <div class="csl-v3-tab-loading" role="status">
@@ -184,25 +188,25 @@ export default class CrimsonServerFavoritesPanel extends Component {
 
                 <div class="csl-favorite-card__preference">
                   <span>{{i18n "crimson_server_list.notifications.preference_card"}}</span>
-                  <button
+                  <DButton
+                    @action={{fn this.toggleNotifications follow}}
+                    @translatedLabel={{this.notificationLabel follow}}
+                    @disabled={{this.mutationBusy}}
+                    @isLoading={{eq this.busyKey (concat "notification-" follow.server_id)}}
+                    @ariaPressed={{follow.notifications_enabled}}
                     class="csl-button csl-favorite-card__notification {{if follow.notifications_enabled "is-active" ""}}"
-                    type="button"
-                    disabled={{eq this.busyServerId follow.server_id}}
-                    aria-pressed={{this.notificationAriaPressed follow}}
-                    {{on "click" (fn this.toggleNotifications follow)}}
-                  >{{this.notificationLabel follow}}</button>
+                  />
                 </div>
 
                 <div class="csl-favorite-card__actions">
                   <a class="csl-button csl-button--primary" href={{follow.server.detail_url}}>{{i18n "crimson_server_list.favorites.open_server"}}</a>
-                  <button
+                  <DButton
+                    @action={{fn this.removeFavorite follow}}
+                    @label="crimson_server_list.favorites.remove"
+                    @disabled={{this.mutationBusy}}
+                    @isLoading={{eq this.busyKey (concat "remove-" follow.server_id)}}
                     class="csl-button csl-favorite-card__remove"
-                    type="button"
-                    disabled={{eq this.busyServerId follow.server_id}}
-                    {{on "click" (fn this.removeFavorite follow)}}
-                  >
-                    {{if (eq this.busyServerId follow.server_id) (i18n "crimson_server_list.favorites.saving") (i18n "crimson_server_list.favorites.remove")}}
-                  </button>
+                  />
                 </div>
               </article>
             {{/each}}
