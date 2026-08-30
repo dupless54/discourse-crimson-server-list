@@ -1,8 +1,9 @@
 import Component from "@glimmer/component";
+import { on } from "@ember/modifier";
 import { action } from "@ember/object";
+import { schedule } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
-import { on } from "@ember/modifier";
 import { i18n } from "discourse-i18n";
 import dIcon from "discourse/ui-kit/helpers/d-icon";
 
@@ -16,7 +17,7 @@ export default class CrimsonServerCardFavorite extends Component {
     super(owner, args);
 
     if (this.canRender) {
-      void this.loadState();
+      schedule("afterRender", () => void this.loadState());
     }
   }
 
@@ -43,6 +44,18 @@ export default class CrimsonServerCardFavorite extends Component {
     );
   }
 
+  get showLoadFailure() {
+    return this.loadFailed && !this.favoritesState.isLoaded;
+  }
+
+  get displayedErrorMessage() {
+    if (this.loadFailed && this.favoritesState.isLoaded) {
+      return "";
+    }
+
+    return this.errorMessage;
+  }
+
   get label() {
     return i18n(
       this.isFavorited
@@ -51,12 +64,25 @@ export default class CrimsonServerCardFavorite extends Component {
     );
   }
 
+  get retryLabel() {
+    return i18n("crimson_server_list.owner_panel.retry");
+  }
+
   async loadState() {
+    this.loadFailed = false;
+    this.errorMessage = "";
+
     try {
       await this.favoritesState.ensureLoaded();
-    } catch {
+    } catch (error) {
       this.loadFailed = true;
+      this.errorMessage = this.errorText(error);
     }
+  }
+
+  @action
+  async retryLoadState() {
+    await this.loadState();
   }
 
   @action
@@ -70,16 +96,32 @@ export default class CrimsonServerCardFavorite extends Component {
     try {
       await this.favoritesState.toggle(this.server.id);
     } catch (error) {
-      this.errorMessage =
-        error?.jqXHR?.responseJSON?.errors?.join(" ") ||
-        error?.responseJSON?.errors?.join(" ") ||
-        i18n("crimson_server_list.favorites.generic_error");
+      this.errorMessage = this.errorText(error);
     }
+  }
+
+  errorText(error) {
+    return (
+      error?.jqXHR?.responseJSON?.errors?.join(" ") ||
+      error?.responseJSON?.errors?.join(" ") ||
+      i18n("crimson_server_list.favorites.generic_error")
+    );
   }
 
   <template>
     {{#if this.canRender}}
-      {{#unless this.loadFailed}}
+      {{#if this.showLoadFailure}}
+        <button
+          class="csl-card-favorite csl-card-favorite--retry"
+          type="button"
+          data-server-id={{this.server.id}}
+          aria-label={{this.retryLabel}}
+          title={{this.retryLabel}}
+          {{on "click" this.retryLoadState}}
+        >
+          {{dIcon "star"}}
+        </button>
+      {{else}}
         <button
           class="csl-card-favorite {{if this.isFavorited "is-active" ""}}"
           type="button"
@@ -92,10 +134,11 @@ export default class CrimsonServerCardFavorite extends Component {
         >
           {{dIcon "star"}}
         </button>
-        {{#if this.errorMessage}}
-          <span class="sr-only" role="alert">{{this.errorMessage}}</span>
-        {{/if}}
-      {{/unless}}
+      {{/if}}
+
+      {{#if this.displayedErrorMessage}}
+        <span class="sr-only" role="alert">{{this.displayedErrorMessage}}</span>
+      {{/if}}
     {{/if}}
   </template>
 }

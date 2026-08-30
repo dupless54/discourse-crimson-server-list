@@ -6,27 +6,42 @@
 
 # Discourse Crimson Server List
 
-**Current release line: 2.9.0**
+**Current release line: 3.0.1 (V3)**
 
-A native Discourse game-server directory with moderated listings, server-authoritative discovery, live status checks, reviews, votes, ownership workflows, favorites, uptime history, and private owner-management tools.
+A native Discourse game-server directory with moderated listings, server-authoritative discovery, live status checks, reviews, votes, ownership workflows, favorites, uptime history, DNS ownership verification, and private owner-management tools.
 
 ## Core Features
 
-- Public `/servers` directory and individual server detail pages.
+- V3 `/servers` application shell with Discover, My Favorites, My Servers, and Administration sections.
+- Browser-history-aware V3 section navigation with accessible keyboard tab behavior.
+- Public server detail pages with reviews, ratings, live status, uptime history, ownership tools, and reporting.
 - Supported categories for Minecraft, FiveM, Rust, ARK, Silkroad Online, Metin2, Knight Online, and World of Warcraft.
 - Server-authoritative search, game/tag/status/verified filters, sorting, and bounded pagination.
+- Featured-server presentation that preserves online, offline, maintenance, and unknown status semantics.
 - User-submitted listings with owner association and optional administrator approval.
 - Owner editing and ownership-claim transfer through moderated workflows.
 - Daily voting and unique 1–5 star/text reviews.
 - DNS TXT ownership verification and verified-server presentation.
 - Abuse reporting and administrator moderation queues.
-- Private favorites/follows with optional back-online notifications.
+- Private favorites/follows with optional back-online notifications and recoverable private-state loading.
 - Uptime history with bounded retention and public 24-hour/7-day/30-day views.
 - Periodic Sidekiq live-status refresh with short-lived cache data.
 - Responsive desktop, tablet, and mobile interfaces using Discourse theme variables.
 - English and Turkish localization.
 
 ## Recent Development Highlights
+
+### 3.0 — V3 Application and Discourse UI Modernization
+
+- Rebuilt `/servers` around the V3 Discover, My Favorites, My Servers, and Administration shell.
+- Added browser-history-aware section navigation and keyboard-accessible ARIA tab behavior.
+- Modernized create/edit/report flows with current Discourse `DModal`, `DButton`, dialog, and localized presentation patterns.
+- Moved discovery, pagination, filtering, sorting, voting, favorites, ownership, moderation, and detail actions onto explicit loading/error/retry states while keeping server-authoritative contracts intact.
+- Hardened administration queues against stale bootstrap data by refreshing authoritative admin state when the panel mounts.
+- Hardened detail favorites, uptime history, and DNS verification against failed initial reads and unsafe default-state mutations.
+- Preserved DNS TXT challenge privacy and prevented clipboard failures from reflecting the private challenge value into error output.
+- Removed constructor-time async state mutations from affected Glimmer components and schedule initial reads after render to remain compatible with current Ember tracking rules.
+- Added regression coverage for V3 browser history, admin queue refresh, DNS verification recovery, favorite-state recovery, uptime recovery, featured status semantics, and keyboard navigation.
 
 ### 2.9 — Owner Panel
 
@@ -35,7 +50,7 @@ A native Discourse game-server directory with moderated listings, server-authori
 - Published, pending-review, and disabled owner listings are available in one management view.
 - Server-authoritative `publication_state`, `can_edit`, `can_refresh`, and `edit_requires_approval` values drive the UI.
 - Owner-private host/port/probe information remains private and is never added to public discovery responses.
-- The `/servers` page now includes a lazy, responsive owner panel with bounded pagination and summary statistics.
+- The `/servers` page includes a lazy, responsive owner panel with bounded pagination and summary statistics.
 
 ### 2.8 — Scalable Discovery
 
@@ -118,7 +133,7 @@ Enable the plugin in site settings and configure the server-list options require
 
 ## Development
 
-The repository uses official Discourse Plugin CI and exact-head validation for delivery. Start with [`AGENTS.md`](AGENTS.md) before changing network, ownership, moderation, or public-serialization behavior.
+The repository uses official Discourse Plugin CI and exact-head validation for delivery. Start with [`AGENTS.md`](AGENTS.md) before changing network, ownership, moderation, or public-serialization behavior. Version-sensitive frontend work should follow current Discourse core patterns and the live Discourse Developer Guides referenced by the repository documentation.
 
 ## Support
 

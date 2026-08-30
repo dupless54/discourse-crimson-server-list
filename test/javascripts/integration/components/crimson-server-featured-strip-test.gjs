@@ -3,81 +3,73 @@ import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
 import CrimsonServerFeaturedStrip from "discourse/plugins/discourse-crimson-server-list/discourse/components/crimson-server-featured-strip";
 
+function featuredServer(id, name, status = "online") {
+  return {
+    id,
+    featured: true,
+    name,
+    short_description: `${name} community`,
+    detail_url: `/servers/server-${id}`,
+    game_slug: "minecraft",
+    game: { icon: "⛏️", name: "Minecraft" },
+    status,
+    supports_player_count: true,
+    players_online: 12,
+    players_max: 100,
+    average_rating: 4.8,
+    review_count: 20,
+    verified: false,
+  };
+}
+
 module("Integration | Component | crimson-server-featured-strip", function (hooks) {
   setupRenderingTest(hooks);
 
   test("renders only featured servers and limits the strip to two", async function (assert) {
     this.set("servers", [
       {
-        id: 1,
-        featured: true,
-        name: "CrimsonCraft",
-        short_description: "Featured Minecraft community",
-        detail_url: "/servers/crimsoncraft",
-        game_slug: "minecraft",
+        ...featuredServer(1, "CrimsonCraft"),
         game: { icon: "⛏️", name: "Minecraft" },
-        status: "online",
-        supports_player_count: true,
+        verified: true,
         players_online: 128,
         players_max: 300,
-        average_rating: 4.8,
-        review_count: 20,
-        verified: true,
       },
       {
-        id: 2,
-        featured: true,
-        name: "RustEmpire",
-        short_description: "Featured Rust community",
-        detail_url: "/servers/rustempire",
+        ...featuredServer(2, "RustEmpire"),
         game_slug: "rust",
         game: { icon: "☢️", name: "Rust" },
-        status: "online",
-        supports_player_count: true,
         players_online: 156,
         players_max: 250,
         average_rating: 4.7,
         review_count: 17,
-        verified: false,
       },
       {
-        id: 3,
-        featured: true,
-        name: "Third Featured",
-        short_description: "Should not be shown in the compact strip",
-        detail_url: "/servers/third",
+        ...featuredServer(3, "Third Featured"),
         game_slug: "ark",
         game: { icon: "🦖", name: "ARK" },
-        status: "online",
-        supports_player_count: true,
+        short_description: "Should not be shown in the compact strip",
         players_online: 10,
         players_max: 20,
         average_rating: 4.5,
         review_count: 4,
-        verified: false,
       },
       {
-        id: 4,
+        ...featuredServer(4, "Regular Server"),
         featured: false,
-        name: "Regular Server",
-        short_description: "Regular listing",
-        detail_url: "/servers/regular",
         game_slug: "fivem",
         game: { icon: "🚓", name: "FiveM" },
-        status: "online",
-        supports_player_count: true,
+        short_description: "Regular listing",
         players_online: 12,
         players_max: 30,
         average_rating: 4.0,
         review_count: 2,
-        verified: false,
       },
     ]);
 
     await render(
       <template>
         <CrimsonServerFeaturedStrip @servers={{this.servers}} />
-      </template>
+      </template>,
     );
 
     assert.dom(".csl-v3-featured-card").exists({ count: 2 });
@@ -87,13 +79,35 @@ module("Integration | Component | crimson-server-featured-strip", function (hook
     assert.dom(".csl-v3-featured").doesNotIncludeText("Regular Server");
   });
 
+  test("preserves maintenance and unknown status semantics", async function (assert) {
+    this.set("servers", [
+      featuredServer(1, "Maintenance Server", "maintenance"),
+      featuredServer(2, "Unknown Server", "unknown"),
+    ]);
+
+    await render(
+      <template>
+        <CrimsonServerFeaturedStrip @servers={{this.servers}} />
+      </template>,
+    );
+
+    assert
+      .dom(".csl-v3-featured-card:first-child .csl-status")
+      .hasClass("csl-status--maintenance")
+      .hasText("Maintenance");
+    assert
+      .dom(".csl-v3-featured-card:last-child .csl-status")
+      .hasClass("csl-status--unknown")
+      .hasText("Unknown");
+  });
+
   test("does not render when no featured servers are available", async function (assert) {
     this.set("servers", [{ id: 1, featured: false }]);
 
     await render(
       <template>
         <CrimsonServerFeaturedStrip @servers={{this.servers}} />
-      </template>
+      </template>,
     );
 
     assert.dom(".csl-v3-featured").doesNotExist();
