@@ -1,5 +1,6 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
+import { scheduleOnce } from "@ember/runloop";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
@@ -19,7 +20,7 @@ export default class CrimsonServerVerificationPanel extends Component {
     super(owner, args);
 
     if (typeof window !== "undefined" && this.args.viewer?.can_edit) {
-      void this.loadVerification();
+      scheduleOnce("afterRender", this, this.loadVerification);
     } else {
       this.isLoading = false;
     }
