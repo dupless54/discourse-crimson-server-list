@@ -6,11 +6,13 @@ import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import { i18n } from "discourse-i18n";
 import CrimsonServerFormModal from "./modal/crimson-server-form";
 import CrimsonServerVerificationPanel from "./crimson-server-verification-panel";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
 export default class CrimsonServerDetail extends Component {
+  @service dialog;
   @service modal;
 
   @tracked server = this.args.model?.server || {};
@@ -36,6 +38,19 @@ export default class CrimsonServerDetail extends Component {
 
   get hasReviews() {
     return this.reviews.length > 0;
+  }
+
+  get gameDetailRows() {
+    return (this.server.game_detail_rows || []).map((detail) => ({
+      ...detail,
+      label: i18n(
+        `crimson_server_list.server_form.field_labels.${detail.key}`,
+      ),
+      unit:
+        detail.key === "group_limit"
+          ? i18n("crimson_server_list.server_form.field_units.people")
+          : detail.unit,
+    }));
   }
 
   get canRefresh() {
@@ -115,9 +130,11 @@ export default class CrimsonServerDetail extends Component {
     try {
       await navigator.clipboard.writeText(this.server.address);
       this.clearMessages();
-      this.announcement = `${this.server.address} kopyalandı.`;
+      this.announcement = i18n("crimson_server_list.detail.copy_success", {
+        address: this.server.address,
+      });
     } catch {
-      this.errorMessage = "Adres kopyalanamadı; elle seçip kopyalayabilirsin.";
+      this.errorMessage = i18n("crimson_server_list.detail.copy_error");
     }
   }
 
@@ -199,7 +216,13 @@ export default class CrimsonServerDetail extends Component {
       return;
     }
 
-    if (!window.confirm(`“${this.server.name}” ilanını kalıcı olarak silmek istiyor musun?`)) {
+    const confirmed = await this.dialog.deleteConfirm({
+      title: i18n("crimson_server_list.detail.delete_title"),
+      message: i18n("crimson_server_list.detail.delete_confirm", {
+        name: this.server.name,
+      }),
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -287,14 +310,14 @@ export default class CrimsonServerDetail extends Component {
     return (
       error?.jqXHR?.responseJSON?.errors?.join(" ") ||
       error?.responseJSON?.errors?.join(" ") ||
-      "İşlem tamamlanamadı. Lütfen yeniden dene."
+      i18n("crimson_server_list.detail.generic_error")
     );
   }
 
   <template>
     <main class="csl-page csl-detail-page">
-      <nav class="csl-detail-back" aria-label="Top listeye dönüş">
-        <a href="/servers">← Tüm sunucular</a>
+      <nav class="csl-detail-back" aria-label={{i18n "crimson_server_list.detail.back_label"}}>
+        <a href="/servers">← {{i18n "crimson_server_list.detail.back_all"}}</a>
       </nav>
 
       <article class="csl-detail csl-game--{{this.server.game_slug}}">
@@ -314,14 +337,14 @@ export default class CrimsonServerDetail extends Component {
 
             <div class="csl-meta">
               <span class="csl-status csl-status--{{this.server.status}}"><i></i>{{this.server.status_label}}</span>
-              {{#unless this.server.approved}}<span>Onay bekliyor</span>{{/unless}}
+              {{#unless this.server.approved}}<span>{{i18n "crimson_server_list.detail.pending_approval"}}</span>{{/unless}}
               {{#if this.server.language}}<span>{{this.server.language}}</span>{{/if}}
               {{#if this.server.version}}<span>{{this.server.version}}</span>{{/if}}
               {{#if this.server.mode}}<span>{{this.server.mode}}</span>{{/if}}
             </div>
 
             {{#if this.server.tag_rows.length}}
-              <div class="csl-server-tags csl-server-tags--hero" aria-label="Sunucu etiketleri">
+              <div class="csl-server-tags csl-server-tags--hero" aria-label={{i18n "crimson_server_list.detail.tags_label"}}>
                 {{#each this.server.tag_rows as |tag|}}<a href={{tag.url}}>#{{tag.name}}</a>{{/each}}
               </div>
             {{/if}}
@@ -333,10 +356,10 @@ export default class CrimsonServerDetail extends Component {
                   href={{this.server.website_url}}
                   target="_blank"
                   rel="noopener noreferrer nofollow ugc sponsored"
-                  aria-label="{{this.server.name}} web sitesini aç"
-                ><img src={{this.server.banner_url}} alt="{{this.server.name}} reklam bannerı" /></a>
+                  aria-label={{i18n "crimson_server_list.detail.website_label" name=this.server.name}}
+                ><img src={{this.server.banner_url}} alt={{i18n "crimson_server_list.detail.banner_alt" name=this.server.name}} /></a>
               {{else}}
-                <div class="csl-ad-banner csl-ad-banner--detail"><img src={{this.server.banner_url}} alt="{{this.server.name}} reklam bannerı" /></div>
+                <div class="csl-ad-banner csl-ad-banner--detail"><img src={{this.server.banner_url}} alt={{i18n "crimson_server_list.detail.banner_alt" name=this.server.name}} /></div>
               {{/if}}
             {{/if}}
           </div>
@@ -347,7 +370,7 @@ export default class CrimsonServerDetail extends Component {
             {{#if this.server.can_view_endpoint}}
               <div class="csl-address csl-address--detail">
                 <code>{{this.server.address}}</code>
-                <button type="button" {{on "click" this.copyAddress}}>Kopyala</button>
+                <button type="button" {{on "click" this.copyAddress}}>{{i18n "crimson_server_list.detail.copy_address"}}</button>
               </div>
             {{/if}}
 
@@ -357,7 +380,7 @@ export default class CrimsonServerDetail extends Component {
                   class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
                   data-user-card={{this.server.owner.username}}
                   href={{this.server.owner.profile_url}}
-                  aria-label="@{{this.server.owner.username}} kullanıcı kartını aç"
+                  aria-label={{i18n "crimson_server_list.detail.user_card_label" username=this.server.owner.username}}
                 >
                   {{#if this.server.owner.avatar_url}}<img class="avatar" src={{this.server.owner.avatar_url}} alt="" />{{/if}}
                 </a>
@@ -365,7 +388,7 @@ export default class CrimsonServerDetail extends Component {
                   class="csl-owner__identity trigger-user-card"
                   data-user-card={{this.server.owner.username}}
                   href={{this.server.owner.profile_url}}
-                ><span><strong>{{this.server.owner.name}}</strong><small>@{{this.server.owner.username}} · liste sahibi</small></span></a>
+                ><span><strong>{{this.server.owner.name}}</strong><small>@{{this.server.owner.username}} · {{i18n "crimson_server_list.detail.owner_role"}}</small></span></a>
               {{/if}}
             </div>
           </div>
@@ -374,44 +397,44 @@ export default class CrimsonServerDetail extends Component {
             <div>
               {{#if this.server.supports_player_count}}
                 <strong>{{this.server.players_online}}<small>{{#if this.server.players_max}}/{{this.server.players_max}}{{else}}/?{{/if}}</small></strong>
-                <span>canlı oyuncu</span>
+                <span>{{i18n "crimson_server_list.detail.live_players"}}</span>
               {{else}}
-                <strong>{{if (eq this.server.status "online") "Açık" "—"}}</strong>
-                <span>erişim durumu</span>
+                <strong>{{if (eq this.server.status "online") (i18n "crimson_server_list.detail.status_online") "—"}}</strong>
+                <span>{{i18n "crimson_server_list.detail.reachability"}}</span>
               {{/if}}
             </div>
-            <div><strong>{{this.server.vote_count}}</strong><span>toplam oy</span></div>
-            <div><strong>{{this.scoreLabel}}</strong><span>{{this.server.review_count}} değerlendirme</span></div>
-            <div><strong>{{this.server.view_count}}</strong><span>görüntülenme</span></div>
+            <div><strong>{{this.server.vote_count}}</strong><span>{{i18n "crimson_server_list.detail.total_votes"}}</span></div>
+            <div><strong>{{this.scoreLabel}}</strong><span>{{i18n "crimson_server_list.detail.review_count" count=this.server.review_count}}</span></div>
+            <div><strong>{{this.server.view_count}}</strong><span>{{i18n "crimson_server_list.detail.views"}}</span></div>
           </div>
 
           <div class="csl-detail-actions">
             {{#if this.viewer.can_vote}}
               <button class="csl-vote-button {{if this.server.voted_today "is-voted" ""}}" type="button" disabled={{this.server.voted_today}} {{on "click" this.vote}}>
-                {{if this.server.voted_today "Bugün oylandı" "Oy ver"}}
+                {{if this.server.voted_today (i18n "crimson_server_list.detail.voted_today") (i18n "crimson_server_list.detail.vote")}}
               </button>
             {{else if this.viewer.logged_in}}
-              <span class="csl-vote-button is-disabled">Oylama kapalı</span>
+              <span class="csl-vote-button is-disabled">{{i18n "crimson_server_list.detail.voting_closed"}}</span>
             {{else}}
-              <a class="csl-vote-button" href={{this.loginPath}}>Oy vermek için giriş yap</a>
+              <a class="csl-vote-button" href={{this.loginPath}}>{{i18n "crimson_server_list.detail.login_to_vote"}}</a>
             {{/if}}
-            {{#if this.server.website_url}}<a class="csl-button" href={{this.server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Web sitesi</a>{{/if}}
+            {{#if this.server.website_url}}<a class="csl-button" href={{this.server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">{{i18n "crimson_server_list.detail.website"}}</a>{{/if}}
             {{#if this.server.discord_url}}<a class="csl-button" href={{this.server.discord_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Discord</a>{{/if}}
             {{#if this.viewer.can_edit}}
-              <button class="csl-button" type="button" {{on "click" this.openEdit}}>Sunucuyu düzenle</button>
+              <button class="csl-button" type="button" {{on "click" this.openEdit}}>{{i18n "crimson_server_list.detail.edit"}}</button>
             {{/if}}
             {{#if this.canRefresh}}
-              <button class="csl-button" type="button" disabled={{eq this.busyAction "refresh"}} {{on "click" this.refreshStatus}}>Canlı durumu yenile</button>
+              <button class="csl-button" type="button" disabled={{eq this.busyAction "refresh"}} {{on "click" this.refreshStatus}}>{{i18n "crimson_server_list.detail.refresh"}}</button>
             {{/if}}
             {{#if (eq this.claimStatus "pending")}}
-              <span class="csl-button csl-button--disabled">Sahiplik talebi inceleniyor</span>
+              <span class="csl-button csl-button--disabled">{{i18n "crimson_server_list.detail.claim_pending"}}</span>
             {{else if this.viewer.can_claim}}
-              <button class="csl-button" type="button" disabled={{eq this.busyAction "claim"}} {{on "click" this.requestOwnership}}>Bu sunucuyu sahiplen</button>
+              <button class="csl-button" type="button" disabled={{eq this.busyAction "claim"}} {{on "click" this.requestOwnership}}>{{i18n "crimson_server_list.detail.claim"}}</button>
             {{else}}
-              {{#unless this.viewer.logged_in}}<a class="csl-button" href={{this.loginPath}}>Bu sunucuyu sahiplen</a>{{/unless}}
+              {{#unless this.viewer.logged_in}}<a class="csl-button" href={{this.loginPath}}>{{i18n "crimson_server_list.detail.claim"}}</a>{{/unless}}
             {{/if}}
             {{#if this.viewer.can_delete}}
-              <button class="csl-button csl-button--danger" type="button" disabled={{eq this.busyAction "delete"}} {{on "click" this.deleteServer}}>İlanı sil</button>
+              <button class="csl-button csl-button--danger" type="button" disabled={{eq this.busyAction "delete"}} {{on "click" this.deleteServer}}>{{i18n "crimson_server_list.detail.delete"}}</button>
             {{/if}}
           </div>
         </section>
@@ -429,16 +452,16 @@ export default class CrimsonServerDetail extends Component {
 
         <div class="csl-detail-grid">
           <section class="csl-panel csl-about">
-            <header><div><p class="csl-eyebrow">SUNUCU TANITIMI</p><h2>Bu sunucu hakkında</h2></div></header>
+            <header><div><p class="csl-eyebrow">{{i18n "crimson_server_list.detail.about_eyebrow"}}</p><h2>{{i18n "crimson_server_list.detail.about_title"}}</h2></div></header>
             {{#if this.server.description}}
               <p>{{this.server.description}}</p>
             {{else}}
-              <p class="csl-muted-copy">Sunucu sahibi henüz ayrıntılı bir tanıtım eklememiş.</p>
+              <p class="csl-muted-copy">{{i18n "crimson_server_list.detail.no_description"}}</p>
             {{/if}}
 
-            {{#if this.server.game_detail_rows.length}}
+            {{#if this.gameDetailRows.length}}
               <dl class="csl-game-details">
-                {{#each this.server.game_detail_rows as |detail|}}
+                {{#each this.gameDetailRows as |detail|}}
                   <div>
                     <dt>{{detail.label}}</dt>
                     <dd>{{detail.value}}{{#if detail.unit}} {{detail.unit}}{{/if}}</dd>
@@ -448,42 +471,42 @@ export default class CrimsonServerDetail extends Component {
             {{/if}}
 
             <dl class="csl-technical">
-              <div class="csl-technical__wide"><dt>Son kontrol</dt><dd>{{if this.server.last_checked_at this.server.last_checked_at "Henüz çalışmadı"}}</dd></div>
+              <div class="csl-technical__wide"><dt>{{i18n "crimson_server_list.detail.last_checked"}}</dt><dd>{{if this.server.last_checked_at this.server.last_checked_at (i18n "crimson_server_list.detail.never_checked")}}</dd></div>
               {{#if this.server.can_view_endpoint}}
-                <div><dt>Sorgu adaptörü</dt><dd>{{this.server.query_adapter}}</dd></div>
-                <div><dt>Sorgu portu</dt><dd>{{if this.server.query_port this.server.query_port this.server.port}}</dd></div>
-                <div><dt>Yanıt süresi</dt><dd>{{#if this.server.last_response_ms}}{{this.server.last_response_ms}} ms{{else}}—{{/if}}</dd></div>
-                {{#if this.server.last_query_error}}<div class="csl-technical__wide"><dt>Son sorgu notu</dt><dd>{{this.server.last_query_error}}</dd></div>{{/if}}
+                <div><dt>{{i18n "crimson_server_list.detail.query_adapter"}}</dt><dd>{{this.server.query_adapter}}</dd></div>
+                <div><dt>{{i18n "crimson_server_list.detail.query_port"}}</dt><dd>{{if this.server.query_port this.server.query_port this.server.port}}</dd></div>
+                <div><dt>{{i18n "crimson_server_list.detail.response_time"}}</dt><dd>{{#if this.server.last_response_ms}}{{this.server.last_response_ms}} ms{{else}}—{{/if}}</dd></div>
+                {{#if this.server.last_query_error}}<div class="csl-technical__wide"><dt>{{i18n "crimson_server_list.detail.last_query_note"}}</dt><dd>{{this.server.last_query_error}}</dd></div>{{/if}}
               {{/if}}
             </dl>
           </section>
 
           <section class="csl-panel csl-review-composer" aria-labelledby="csl-review-title">
-            <header><div><p class="csl-eyebrow">TOPLULUK PUANI</p><h2 id="csl-review-title">Yorum ve değerlendirme</h2></div></header>
+            <header><div><p class="csl-eyebrow">{{i18n "crimson_server_list.detail.community_eyebrow"}}</p><h2 id="csl-review-title">{{i18n "crimson_server_list.detail.review_title"}}</h2></div></header>
             {{#if this.viewer.can_review}}
               <form {{on "submit" this.saveReview}}>
-                <div class="csl-star-picker" role="group" aria-label="Yıldız puanı">
+                <div class="csl-star-picker" role="group" aria-label={{i18n "crimson_server_list.detail.star_group_label"}}>
                   {{#each this.starOptions as |star|}}
-                    <button class={{if star.active "is-active" ""}} type="button" aria-label="{{star.value}} yıldız" aria-pressed={{star.active}} {{on "click" (fn this.setRating star.value)}}>★</button>
+                    <button class={{if star.active "is-active" ""}} type="button" aria-label={{i18n "crimson_server_list.detail.star_label" count=star.value}} aria-pressed={{star.active}} {{on "click" (fn this.setRating star.value)}}>★</button>
                   {{/each}}
                 </div>
-                <textarea maxlength="2000" rows="5" value={{this.reviewBody}} placeholder="Sunucudaki deneyimini toplulukla paylaş…" {{on "input" this.updateReviewBody}}></textarea>
+                <textarea maxlength="2000" rows="5" value={{this.reviewBody}} placeholder={{i18n "crimson_server_list.detail.review_placeholder"}} {{on "input" this.updateReviewBody}}></textarea>
                 <div class="csl-review-composer__actions">
-                  {{#if this.mineReview}}<button class="csl-button" type="button" disabled={{eq this.busyAction "review"}} {{on "click" this.deleteReview}}>Değerlendirmemi sil</button>{{/if}}
-                  <button class="csl-button csl-button--primary" type="submit" disabled={{eq this.busyAction "review"}}>{{if this.mineReview "Değerlendirmeyi güncelle" "Değerlendirmeyi yayınla"}}</button>
+                  {{#if this.mineReview}}<button class="csl-button" type="button" disabled={{eq this.busyAction "review"}} {{on "click" this.deleteReview}}>{{i18n "crimson_server_list.detail.delete_review"}}</button>{{/if}}
+                  <button class="csl-button csl-button--primary" type="submit" disabled={{eq this.busyAction "review"}}>{{if this.mineReview (i18n "crimson_server_list.detail.update_review") (i18n "crimson_server_list.detail.publish_review")}}</button>
                 </div>
               </form>
             {{else if this.viewer.logged_in}}
-              <p class="csl-muted-copy">Değerlendirmeler şu anda kapalı.</p>
+              <p class="csl-muted-copy">{{i18n "crimson_server_list.detail.reviews_closed"}}</p>
             {{else}}
-              <a class="csl-button csl-button--primary" href={{this.loginPath}}>Yorum yapmak için giriş yap</a>
+              <a class="csl-button csl-button--primary" href={{this.loginPath}}>{{i18n "crimson_server_list.detail.login_to_review"}}</a>
             {{/if}}
           </section>
         </div>
 
         <section class="csl-panel csl-reviews" aria-labelledby="csl-reviews-title">
           <header>
-            <div><p class="csl-eyebrow">{{this.server.review_count}} DEĞERLENDİRME</p><h2 id="csl-reviews-title">Forum üyelerinin görüşleri</h2></div>
+            <div><p class="csl-eyebrow">{{i18n "crimson_server_list.detail.reviews_eyebrow" count=this.server.review_count}}</p><h2 id="csl-reviews-title">{{i18n "crimson_server_list.detail.reviews_title"}}</h2></div>
             <strong class="csl-rating-badge">★ {{this.scoreLabel}}</strong>
           </header>
 
@@ -496,7 +519,7 @@ export default class CrimsonServerDetail extends Component {
                       class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
                       data-user-card={{review.user.username}}
                       href={{review.user.profile_url}}
-                      aria-label="@{{review.user.username}} kullanıcı kartını aç"
+                      aria-label={{i18n "crimson_server_list.detail.user_card_label" username=review.user.username}}
                     ><img class="avatar" src={{review.user.avatar_url}} alt="" loading="lazy" /></a>
                     <a
                       class="csl-review__identity trigger-user-card"
@@ -504,14 +527,14 @@ export default class CrimsonServerDetail extends Component {
                       href={{review.user.profile_url}}
                     ><span><strong>{{review.user.name}}</strong><small>@{{review.user.username}}</small></span></a>
                   </div>
-                  <div class="csl-review__rating" aria-label="{{review.rating}} yıldız">★ {{review.rating}}/5</div>
+                  <div class="csl-review__rating" aria-label={{i18n "crimson_server_list.detail.star_label" count=review.rating}}>★ {{review.rating}}/5</div>
                   <p>{{review.body}}</p>
-                  {{#if review.mine}}<span class="csl-review__mine">Senin değerlendirmen</span>{{/if}}
+                  {{#if review.mine}}<span class="csl-review__mine">{{i18n "crimson_server_list.detail.mine_review"}}</span>{{/if}}
                 </article>
               {{/each}}
             </div>
           {{else}}
-            <div class="csl-empty csl-empty--compact"><p>Henüz değerlendirme yok. İlk deneyimi sen paylaşabilirsin.</p></div>
+            <div class="csl-empty csl-empty--compact"><p>{{i18n "crimson_server_list.detail.no_reviews"}}</p></div>
           {{/if}}
         </section>
       </article>

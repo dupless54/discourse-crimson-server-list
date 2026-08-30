@@ -35,6 +35,20 @@ export default class CrimsonServerV3Shell extends Component {
   constructor(owner, args) {
     super(owner, args);
     this.activeTab = this.tabFromLocation();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("popstate", this.handleLocationChange);
+      window.addEventListener("hashchange", this.handleLocationChange);
+    }
+  }
+
+  willDestroy() {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("popstate", this.handleLocationChange);
+      window.removeEventListener("hashchange", this.handleLocationChange);
+    }
+
+    super.willDestroy(...arguments);
   }
 
   get viewer() {
@@ -66,14 +80,23 @@ export default class CrimsonServerV3Shell extends Component {
     return requested && this.isAllowed(requested) ? requested : "discover";
   }
 
-  syncLocation(tab) {
+  syncLocation(tab, { replace = false } = {}) {
     if (typeof window === "undefined") {
       return;
     }
 
     const hash = TAB_HASHES[tab] || TAB_HASHES.discover;
     const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
-    window.history.replaceState(window.history.state, "", nextUrl);
+    const method = replace ? "replaceState" : "pushState";
+    window.history[method](window.history.state, "", nextUrl);
+  }
+
+  @action
+  handleLocationChange() {
+    const nextTab = this.tabFromLocation();
+    if (nextTab !== this.activeTab) {
+      this.activeTab = nextTab;
+    }
   }
 
   @action

@@ -1,5 +1,6 @@
 import { ajax } from "discourse/lib/ajax";
 import DiscourseRoute from "discourse/routes/discourse";
+import { i18n } from "discourse-i18n";
 
 export default class CrimsonServerRoute extends DiscourseRoute {
   model(params) {
@@ -9,6 +10,9 @@ export default class CrimsonServerRoute extends DiscourseRoute {
   }
 
   titleToken() {
-    return this.currentModel?.server?.name || "Sunucu tanıtımı";
+    return (
+      this.currentModel?.server?.name ||
+      i18n("crimson_server_list.detail.fallback_title")
+    );
   }
 }
