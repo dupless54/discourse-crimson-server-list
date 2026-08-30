@@ -46,7 +46,7 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     window.history.replaceState(window.history.state, "", this.previousUrl);
   });
 
-  test("switches actual route panels and lazy-loads private tabs once", async function (assert) {
+  test("renders exactly one real route panel and switches tabs without residual cards", async function (assert) {
     let discoveryReads = 0;
     let favoriteReads = 0;
     let ownedReads = 0;
@@ -109,7 +109,7 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     assert.strictEqual(favoriteReads, 0);
     assert.strictEqual(ownedReads, 0);
     assert.strictEqual(reportReads, 0);
-    assert.dom("#csl-v3-discover").doesNotHaveAttribute("hidden");
+    assert.dom("#csl-v3-discover").exists();
     assert.dom("#csl-v3-favorites").doesNotExist();
     assert.dom("#csl-v3-owned").doesNotExist();
     assert.dom("#csl-v3-admin").doesNotExist();
@@ -117,30 +117,42 @@ module("Integration | Component | crimson-server-v3-shell", function (hooks) {
     await click("#csl-v3-tab-favorites");
     await settled();
 
-    assert.dom("#csl-v3-discover").hasAttribute("hidden");
-    assert.dom("#csl-v3-favorites").doesNotHaveAttribute("hidden");
+    assert.dom("#csl-v3-discover").doesNotExist();
+    assert.dom("#csl-v3-favorites").exists();
+    assert.dom("#csl-v3-owned").doesNotExist();
+    assert.dom("#csl-v3-admin").doesNotExist();
     assert.strictEqual(favoriteReads, 1);
     assert.strictEqual(window.location.hash, "#favorites");
 
     await click("#csl-v3-tab-owned");
     await settled();
 
-    assert.dom("#csl-v3-favorites").hasAttribute("hidden");
-    assert.dom("#csl-v3-owned").doesNotHaveAttribute("hidden");
+    assert.dom("#csl-v3-favorites").doesNotExist();
+    assert.dom("#csl-v3-owned").exists();
+    assert.dom("#csl-v3-admin").doesNotExist();
     assert.strictEqual(ownedReads, 1);
 
     await click("#csl-v3-tab-administration");
     await settled();
 
-    assert.dom("#csl-v3-owned").hasAttribute("hidden");
-    assert.dom("#csl-v3-admin").doesNotHaveAttribute("hidden");
+    assert.dom("#csl-v3-owned").doesNotExist();
+    assert.dom("#csl-v3-admin").exists();
+    assert.dom("#csl-v3-discover").doesNotExist();
     assert.strictEqual(reportReads, 1);
+
+    await click("#csl-v3-tab-discover");
+    await settled();
+
+    assert.dom("#csl-v3-admin").doesNotExist();
+    assert.dom("#csl-v3-discover").exists();
+    assert.strictEqual(discoveryReads, 2, "returning to Discover remounts a clean discovery panel");
 
     await click("#csl-v3-tab-favorites");
     await settled();
 
-    assert.dom("#csl-v3-favorites").doesNotHaveAttribute("hidden");
-    assert.strictEqual(favoriteReads, 1, "revisiting a mounted tab does not refetch");
+    assert.dom("#csl-v3-discover").doesNotExist();
+    assert.dom("#csl-v3-favorites").exists();
+    assert.strictEqual(favoriteReads, 2, "revisiting Favorites remounts only that active panel");
     assert.strictEqual(ownedReads, 1);
     assert.strictEqual(reportReads, 1);
   });
