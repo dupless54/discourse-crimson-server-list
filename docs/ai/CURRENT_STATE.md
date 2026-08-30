@@ -1,11 +1,11 @@
 # Current state
 
-Functional main baseline before this state refresh: `f963c3322b9fef0780e5a68eff128b5cccbd6104`.
+Current functional baseline before this modernization: `a4b1338b35d504027552f1c254078beb836bd47e` on `main`.
 
-V2.9 Owner Panel is complete: private `GET /crimson-server-list/me/servers.json` is login-gated and strictly self-scoped, includes the owner's published/pending/disabled listings with bounded pagination and server-authoritative management state, and the `/servers` UI exposes the same data through a lazy responsive EN/TR panel without client-side ownership inference. Owner-private endpoint/probe fields remain private and are not added to public discovery.
+The plugin is on the V3 frontend line (`plugin.rb` currently declares `3.0.1`). `/servers` uses the V3 shell with Discover, Favorites, My Servers, and Administration panels. Public discovery is server-authoritative and paginated; favorites/follows and owner management remain private; approval, ownership claims, reports, DNS verification, uptime history, voting/reviews, back-online notifications, and bounded live probing remain active.
 
-V2.8 scalable discovery, V2.7 back-online notifications, V2.6 private favorites/follows, V2.5 uptime history and V2.4 trust/moderation remain live. The plugin header version is `2.9.0`.
+The current frontend modernization follows the live Discourse Developer Guides and current `discourse/discourse` patterns instead of relying on stale snippets. User-visible discovery/detail/route copy is locale-backed in English and Turkish, game-specific technical field labels are localized at presentation time, destructive listing deletion uses the Discourse dialog service, and create/edit/report modals follow current DModal form semantics with Discourse DButton actions. V3 tabs synchronize with browser history while preserving server-authoritative authorization gates.
 
-No canonical V3 roadmap/TODO was found in the current repository search after V2.9. Before the next product feature, inspect fresh source/tests and select the smallest user-visible gap rather than inventing a milestone from stale plan material.
+Durable high-risk boundary: all live server probing remains behind the existing network policy/adapters with DNS/IP validation, strict timeouts, and bounded work. Ownership, claims, reviews, reports, favorites, notification preferences, owner-management state, approval, and moderation remain server-authoritative. Public discovery responses remain public-only and must not expose host/port/probe diagnostics.
 
-Durable high-risk boundary: all live server probing remains behind the existing network policy/adapters with DNS/IP validation, strict timeouts and bounded work. Ownership, claims, reviews, reports, favorites, notification preferences and owner-management state remain server-authoritative. Public discovery responses remain public-only and must not expose host/port/probe diagnostics.
+Validation/merge boundary: only official Discourse Plugin CI (plus any other required Discourse-owned CI) on the latest exact PR head can authorize merge. Stale, missing, pending, cancelled, skipped, neutral, or unknown CI is not GREEN.

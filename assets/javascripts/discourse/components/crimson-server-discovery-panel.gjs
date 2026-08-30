@@ -7,6 +7,7 @@ import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
 import dIcon from "discourse/ui-kit/helpers/d-icon";
+import { i18n } from "discourse-i18n";
 import CrimsonServerCardFavorite from "./crimson-server-card-favorite";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
@@ -325,17 +326,27 @@ export default class CrimsonServerDiscoveryPanel extends Component {
     return (
       error?.jqXHR?.responseJSON?.errors?.join(" ") ||
       error?.responseJSON?.errors?.join(" ") ||
-      "Sunucu listesi güncellenemedi. Lütfen yeniden dene."
+      i18n("crimson_server_list.discovery.generic_error")
     );
   }
 
   <template>
-    <section class="csl-discovery-shell" aria-label="Sunucu keşfi">
-      <section class="csl-discovery" aria-label="Sunucu filtreleri">
-        <div class="csl-game-filter" role="list" aria-label="Oyunlar">
+    <section
+      class="csl-discovery-shell"
+      aria-label={{i18n "crimson_server_list.discovery.aria_label"}}
+    >
+      <section
+        class="csl-discovery"
+        aria-label={{i18n "crimson_server_list.discovery.filters_label"}}
+      >
+        <div
+          class="csl-game-filter"
+          role="list"
+          aria-label={{i18n "crimson_server_list.discovery.games_label"}}
+        >
           <a href={{this.allGamesUrl}} class={{if (eq this.selectedGame "all") "is-active" ""}} {{on "click" (fn this.selectGame "all")}}>
             <span class="csl-game-filter__all">∞</span>
-            <strong>Tümü</strong>
+            <strong>{{i18n "crimson_server_list.discovery.all"}}</strong>
             <small>{{this.stats.server_count}}</small>
           </a>
           {{#each this.gameFilters as |game|}}
@@ -348,9 +359,13 @@ export default class CrimsonServerDiscoveryPanel extends Component {
         </div>
 
         {{#if this.tags.length}}
-          <div class="csl-tag-filter" role="list" aria-label="Sunucu etiketleri">
-            <strong>Etiketler</strong>
-            <a href={{this.allTagsUrl}} class={{if this.selectedTag "" "is-active"}} {{on "click" (fn this.selectTag "")}}>Tümü</a>
+          <div
+            class="csl-tag-filter"
+            role="list"
+            aria-label={{i18n "crimson_server_list.discovery.tags_label"}}
+          >
+            <strong>{{i18n "crimson_server_list.discovery.tags"}}</strong>
+            <a href={{this.allTagsUrl}} class={{if this.selectedTag "" "is-active"}} {{on "click" (fn this.selectTag "")}}>{{i18n "crimson_server_list.discovery.all"}}</a>
             {{#each this.tagFilters as |tag|}}
               <a href={{tag.filter_url}} class={{if (eq this.selectedTag tag.slug) "is-active" ""}} {{on "click" (fn this.selectTag tag.slug)}}>
                 #{{tag.name}} <small>{{tag.server_count}}</small>
@@ -361,25 +376,30 @@ export default class CrimsonServerDiscoveryPanel extends Component {
 
         <div class="csl-toolbar">
           <label class="csl-search">
-            <span class="sr-only">Sunucu ara</span>
-            <input type="search" value={{this.searchQuery}} placeholder="Sunucu adı, oyun veya etiket ara…" {{on "input" this.updateSearch}} />
+            <span class="sr-only">{{i18n "crimson_server_list.discovery.search_label"}}</span>
+            <input
+              type="search"
+              value={{this.searchQuery}}
+              placeholder={{i18n "crimson_server_list.discovery.search_placeholder"}}
+              {{on "input" this.updateSearch}}
+            />
           </label>
           <label class="csl-sort">
-            <span>Sırala</span>
+            <span>{{i18n "crimson_server_list.discovery.sort_label"}}</span>
             <select value={{this.sortMode}} {{on "change" this.updateSort}}>
-              <option value="top">En yüksek oy</option>
-              <option value="online">Çevrimiçi</option>
-              <option value="players">Oyuncu sayısı</option>
-              <option value="rating">En iyi değerlendirme</option>
-              <option value="new">En yeni</option>
+              <option value="top">{{i18n "crimson_server_list.discovery.sort_top"}}</option>
+              <option value="online">{{i18n "crimson_server_list.discovery.sort_online"}}</option>
+              <option value="players">{{i18n "crimson_server_list.discovery.sort_players"}}</option>
+              <option value="rating">{{i18n "crimson_server_list.discovery.sort_rating"}}</option>
+              <option value="new">{{i18n "crimson_server_list.discovery.sort_new"}}</option>
             </select>
           </label>
         </div>
       </section>
 
       <div class="csl-discovery-status" aria-live="polite">
-        <span>{{this.resultCount}} sunucu bulundu</span>
-        {{#if this.isLoading}}<span>Sonuçlar güncelleniyor…</span>{{/if}}
+        <span>{{i18n "crimson_server_list.discovery.result_count" count=this.resultCount}}</span>
+        {{#if this.isLoading}}<span>{{i18n "crimson_server_list.discovery.updating"}}</span>{{/if}}
       </div>
 
       {{#if this.announcement}}
@@ -388,14 +408,14 @@ export default class CrimsonServerDiscoveryPanel extends Component {
       {{#if this.errorMessage}}
         <div class="csl-notice csl-notice--error csl-discovery-error" role="alert">
           <span>{{this.errorMessage}}</span>
-          <button class="csl-button" type="button" {{on "click" this.retry}}>Yeniden dene</button>
+          <button class="csl-button" type="button" {{on "click" this.retry}}>{{i18n "crimson_server_list.discovery.retry"}}</button>
         </div>
       {{/if}}
 
       <section class="csl-server-list" aria-live="polite" aria-busy={{if this.isLoading "true" "false"}}>
         {{#each this.rankedServers as |server|}}
           <article class="csl-server-card csl-game--{{server.game_slug}}">
-            <div class="csl-rank" aria-label="Sıra {{server.rank}}">
+            <div class="csl-rank" aria-label={{i18n "crimson_server_list.discovery.rank_label" rank=server.rank}}>
               <span>#</span>{{server.rank}}
             </div>
 
@@ -407,13 +427,13 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                     href={{server.website_url}}
                     target="_blank"
                     rel="noopener noreferrer nofollow ugc sponsored"
-                    aria-label="{{server.name}} web sitesini aç"
-                  ><img src={{server.banner_url}} alt="{{server.name}} reklam bannerı" loading="lazy" /></a>
+                    aria-label={{i18n "crimson_server_list.discovery.website_label" name=server.name}}
+                  ><img src={{server.banner_url}} alt={{i18n "crimson_server_list.discovery.banner_alt" name=server.name}} loading="lazy" /></a>
                 {{else}}
-                  <div class="csl-ad-banner"><img src={{server.banner_url}} alt="{{server.name}} reklam bannerı" loading="lazy" /></div>
+                  <div class="csl-ad-banner"><img src={{server.banner_url}} alt={{i18n "crimson_server_list.discovery.banner_alt" name=server.name}} loading="lazy" /></div>
                 {{/if}}
               {{else}}
-                <a class="csl-server-card__fallback" href={{server.detail_url}} aria-label="{{server.name}} tanıtımını aç">
+                <a class="csl-server-card__fallback" href={{server.detail_url}} aria-label={{i18n "crimson_server_list.discovery.fallback_label" name=server.name}}>
                   <span aria-hidden="true">{{server.game.icon}}</span>
                   <small>{{server.game.name}}</small>
                 </a>
@@ -430,7 +450,7 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                   </div>
                   <p>{{server.short_description}}</p>
                 </div>
-                {{#if server.featured}}<span class="csl-featured">ÖNE ÇIKAN</span>{{/if}}
+                {{#if server.featured}}<span class="csl-featured">{{i18n "crimson_server_list.discovery.featured"}}</span>{{/if}}
               </header>
 
               <div class="csl-meta">
@@ -442,14 +462,14 @@ export default class CrimsonServerDiscoveryPanel extends Component {
               </div>
 
               {{#if server.tag_rows.length}}
-                <div class="csl-server-tags" aria-label="Sunucu etiketleri">
+                <div class="csl-server-tags" aria-label={{i18n "crimson_server_list.discovery.tags_aria"}}>
                   {{#each server.tag_rows as |tag|}}
                     <a href={{tag.url}} {{on "click" (fn this.selectTag tag.slug)}}>#{{tag.name}}</a>
                   {{/each}}
                 </div>
               {{/if}}
 
-              <a class="csl-description-link" href={{server.detail_url}}>Tanıtımı, yorumları ve puanları aç →</a>
+              <a class="csl-description-link" href={{server.detail_url}}>{{i18n "crimson_server_list.discovery.description_link"}} →</a>
 
               <footer>
                 {{#if server.owner}}
@@ -459,7 +479,7 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                         class="csl-avatar-link duc-avatar-frame-target trigger-user-card"
                         data-user-card={{server.owner.username}}
                         href={{server.owner.profile_url}}
-                        aria-label="@{{server.owner.username}} kullanıcı kartını aç"
+                        aria-label={{i18n "crimson_server_list.discovery.user_card_label" username=server.owner.username}}
                       >
                         <img class="avatar" src={{server.owner.avatar_url}} alt="" loading="lazy" />
                       </a>
@@ -468,18 +488,18 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                       class="csl-owner__identity trigger-user-card"
                       data-user-card={{server.owner.username}}
                       href={{server.owner.profile_url}}
-                    >@{{server.owner.username}} tarafından eklendi</a>
+                    >{{i18n "crimson_server_list.discovery.added_by" username=server.owner.username}}</a>
                   </div>
                 {{/if}}
-                <nav class="csl-server-card__actions" aria-label="Sunucu bağlantıları">
+                <nav class="csl-server-card__actions" aria-label={{i18n "crimson_server_list.discovery.links_label"}}>
                   <a class="csl-card-action--detail" href={{server.detail_url}}>
                     {{dIcon "circle-info"}}
-                    <span>Detayı Aç</span>
+                    <span>{{i18n "crimson_server_list.discovery.open_detail"}}</span>
                   </a>
                   {{#if server.website_url}}
                     <a href={{server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">
                       {{dIcon "globe"}}
-                      <span>Web</span>
+                      <span>{{i18n "crimson_server_list.discovery.web"}}</span>
                     </a>
                   {{/if}}
                   {{#if server.discord_url}}
@@ -496,19 +516,25 @@ export default class CrimsonServerDiscoveryPanel extends Component {
               <div class="csl-players">
                 {{#if server.supports_player_count}}
                   <strong>{{server.players_online}}</strong>
-                  <span>{{#if server.players_max}}/ {{server.players_max}} oyuncu{{else}}canlı oyuncu{{/if}}</span>
+                  <span>
+                    {{#if server.players_max}}
+                      {{i18n "crimson_server_list.discovery.players_capacity" max=server.players_max}}
+                    {{else}}
+                      {{i18n "crimson_server_list.discovery.live_players"}}
+                    {{/if}}
+                  </span>
                 {{else}}
-                  <strong>{{if (eq server.status "online") "Açık" "—"}}</strong>
-                  <span>erişim durumu</span>
+                  <strong>{{if (eq server.status "online") (i18n "crimson_server_list.discovery.status_online") "—"}}</strong>
+                  <span>{{i18n "crimson_server_list.discovery.reachability"}}</span>
                 {{/if}}
               </div>
               <div class="csl-votes">
                 <strong>{{server.vote_count}}</strong>
-                <span>oy</span>
+                <span>{{i18n "crimson_server_list.discovery.votes"}}</span>
               </div>
               <div class="csl-rating">
                 <strong>★ {{server.average_rating}}</strong>
-                <span>{{server.review_count}} değerlendirme</span>
+                <span>{{i18n "crimson_server_list.discovery.reviews" count=server.review_count}}</span>
               </div>
               {{#if this.viewer.can_vote}}
                 <button
@@ -519,14 +545,14 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                   {{on "click" (fn this.vote server)}}
                 >
                   {{dIcon "thumbs-up"}}
-                  <span>{{if server.voted_today "Bugün oylandı" "Oy ver"}}</span>
+                  <span>{{if server.voted_today (i18n "crimson_server_list.discovery.voted_today") (i18n "crimson_server_list.discovery.vote")}}</span>
                 </button>
               {{else if this.viewer.logged_in}}
-                <span class="csl-vote-button is-disabled">Oylama kapalı</span>
+                <span class="csl-vote-button is-disabled">{{i18n "crimson_server_list.discovery.voting_closed"}}</span>
               {{else}}
                 <a class="csl-vote-button" href="/login?return_path=%2Fservers">
                   {{dIcon "thumbs-up"}}
-                  <span>Oy vermek için giriş yap</span>
+                  <span>{{i18n "crimson_server_list.discovery.login_to_vote"}}</span>
                 </a>
               {{/if}}
             </aside>
@@ -535,8 +561,8 @@ export default class CrimsonServerDiscoveryPanel extends Component {
           {{#unless this.isLoading}}
             <div class="csl-empty">
               <span aria-hidden="true">⌁</span>
-              <h2>Eşleşen sunucu bulunamadı</h2>
-              <p>Arama metnini, oyun kategorisini veya etiket filtresini değiştirmeyi dene.</p>
+              <h2>{{i18n "crimson_server_list.discovery.empty_title"}}</h2>
+              <p>{{i18n "crimson_server_list.discovery.empty_description"}}</p>
             </div>
           {{/unless}}
         {{/each}}
@@ -545,15 +571,12 @@ export default class CrimsonServerDiscoveryPanel extends Component {
       {{#if this.pagination.has_more}}
         <div class="csl-form__actions csl-discovery-load-more">
           <button class="csl-button csl-button--primary" type="button" disabled={{this.isLoadingMore}} {{on "click" this.loadMore}}>
-            {{if this.isLoadingMore "Daha fazla sunucu yükleniyor…" "Daha fazla sunucu göster"}}
+            {{if this.isLoadingMore (i18n "crimson_server_list.discovery.loading_more") (i18n "crimson_server_list.discovery.load_more")}}
           </button>
         </div>
       {{/if}}
 
-      <p class="csl-footnote">
-        Canlı durum sorguları sayfa isteklerinden bağımsız Sidekiq işleriyle,
-        yalnızca izin verilen genel internet adresi ve portlara uygulanır.
-      </p>
+      <p class="csl-footnote">{{i18n "crimson_server_list.discovery.footnote"}}</p>
     </section>
   </template>
 }

@@ -4,6 +4,7 @@ import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import DModal from "discourse/ui-kit/d-modal";
 import { i18n } from "discourse-i18n";
 
@@ -72,6 +73,17 @@ export default class CrimsonServerFormModal extends Component {
     return (game?.fields || []).map((field) => ({
       ...field,
       inputName: `game_detail__${field.key}`,
+      label: i18n(
+        `crimson_server_list.server_form.field_labels.${field.key}`,
+      ),
+      placeholder:
+        field.key === "wipe_schedule"
+          ? i18n("crimson_server_list.server_form.field_placeholders.wipe_schedule")
+          : field.placeholder,
+      unit:
+        field.key === "group_limit"
+          ? i18n("crimson_server_list.server_form.field_units.people")
+          : field.unit,
       value: values[field.key] ?? "",
     }));
   }
@@ -86,13 +98,17 @@ export default class CrimsonServerFormModal extends Component {
   }
 
   @action
-  async submit(event) {
-    event.preventDefault();
+  async submit(_actionParam, event) {
     if (this.isSubmitting) {
       return;
     }
 
-    const form = event.currentTarget;
+    const form = event?.currentTarget?.form || event?.currentTarget;
+    if (!(form instanceof HTMLFormElement)) {
+      this.errorMessage = i18n("crimson_server_list.server_form.generic_error");
+      return;
+    }
+
     const data = this.serverFormData(form);
     this.isSubmitting = true;
     this.errorMessage = "";
@@ -157,6 +173,7 @@ export default class CrimsonServerFormModal extends Component {
       class="csl-server-form-modal --large"
       @title={{this.title}}
       @closeModal={{@closeModal}}
+      @tagName="form"
     >
       <:body>
         {{#if this.result}}
@@ -182,7 +199,7 @@ export default class CrimsonServerFormModal extends Component {
             <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
           {{/if}}
 
-          <form id="csl-server-form" class="csl-modal-form" {{on "submit" this.submit}}>
+          <div class="csl-modal-form">
             <fieldset class="csl-modal-form__section">
               <legend>
                 <span>{{i18n "crimson_server_list.server_form.identity_title"}}</span>
@@ -222,11 +239,11 @@ export default class CrimsonServerFormModal extends Component {
                 </label>
                 <label>
                   <span>{{i18n "crimson_server_list.server_form.language"}}</span>
-                  <input name="language" value={{this.server.language}} maxlength="60" placeholder="Türkçe" />
+                  <input name="language" value={{this.server.language}} maxlength="60" placeholder={{i18n "crimson_server_list.server_form.language_placeholder"}} />
                 </label>
                 <label>
                   <span>{{i18n "crimson_server_list.server_form.country_code"}}</span>
-                  <input name="country_code" value={{this.server.country_code}} maxlength="2" placeholder="TR" />
+                  <input name="country_code" value={{this.server.country_code}} maxlength="2" placeholder={{i18n "crimson_server_list.server_form.country_code_placeholder"}} />
                 </label>
               </div>
             </fieldset>
@@ -314,7 +331,7 @@ export default class CrimsonServerFormModal extends Component {
                     name="tags"
                     value={{this.server.tags_csv}}
                     maxlength="300"
-                    placeholder="pvp, türkçe, high-exp"
+                    placeholder={{i18n "crimson_server_list.server_form.tags_placeholder"}}
                   />
                   <small>{{i18n "crimson_server_list.server_form.tags_help"}}</small>
                 </label>
@@ -350,25 +367,31 @@ export default class CrimsonServerFormModal extends Component {
                 </label>
               </div>
             </fieldset>
-          </form>
+          </div>
         {{/if}}
       </:body>
 
       <:footer>
         {{#if this.result}}
-          <button class="btn btn-primary" type="button" {{on "click" @closeModal}}>
-            {{i18n "crimson_server_list.server_form.close"}}
-          </button>
+          <DButton
+            @action={{@closeModal}}
+            @label="crimson_server_list.server_form.close"
+            class="btn-primary"
+          />
         {{else}}
-          <button class="btn" type="button" disabled={{this.isSubmitting}} {{on "click" @closeModal}}>
-            {{i18n "crimson_server_list.server_form.cancel"}}
-          </button>
-          <button
-            class="btn btn-primary"
-            type="submit"
-            form="csl-server-form"
-            disabled={{this.isSubmitting}}
-          >{{this.submitLabel}}</button>
+          <DButton
+            @action={{@closeModal}}
+            @label="crimson_server_list.server_form.cancel"
+            @disabled={{this.isSubmitting}}
+          />
+          <DButton
+            @action={{this.submit}}
+            @forwardEvent={{true}}
+            @translatedLabel={{this.submitLabel}}
+            @type="submit"
+            @isLoading={{this.isSubmitting}}
+            class="btn-primary"
+          />
         {{/if}}
       </:footer>
     </DModal>

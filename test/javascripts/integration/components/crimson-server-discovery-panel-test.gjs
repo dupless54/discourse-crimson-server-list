@@ -34,7 +34,7 @@ function serverFixture(id, name) {
       },
     ],
     status: "online",
-    status_label: "Çevrimiçi",
+    status_label: "Online",
     players_online: 12,
     players_max: 100,
     supports_player_count: true,
@@ -188,6 +188,7 @@ module("Integration | Component | crimson-server-discovery-panel", function (hoo
       .dom(".csl-discovery-shell .csl-server-card__title-row h2 a")
       .hasText("First Server");
     assert.dom(".csl-discovery-shell").doesNotIncludeText("Bootstrap Server");
+    assert.dom(".csl-discovery-shell").includesText("3 servers found");
     assert.dom(".csl-discovery-load-more button").exists();
 
     await click(".csl-discovery-load-more button");
@@ -232,7 +233,7 @@ module("Integration | Component | crimson-server-discovery-panel", function (hoo
         server_id: 42,
         vote_count: 8,
         voted_today: true,
-        message: "Oy kaydedildi.",
+        message: "Vote saved.",
       });
     });
 
@@ -257,7 +258,7 @@ module("Integration | Component | crimson-server-discovery-panel", function (hoo
       .hasAttribute("aria-pressed", "true");
     assert
       .dom(".csl-discovery-shell .csl-vote-button")
-      .hasText("Bugün oylandı");
+      .hasText("Voted today");
   });
 
   test("loads card favorites once and keeps mutations server-authoritative", async function (assert) {

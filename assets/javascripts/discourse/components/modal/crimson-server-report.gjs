@@ -4,6 +4,7 @@ import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import DModal from "discourse/ui-kit/d-modal";
 import { i18n } from "discourse-i18n";
 
@@ -35,14 +36,18 @@ export default class CrimsonServerReportModal extends Component {
   }
 
   @action
-  async submit(event) {
-    event.preventDefault();
-
+  async submit(_actionParam, event) {
     if (this.isSubmitting || !this.reason) {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const form = event?.currentTarget?.form || event?.currentTarget;
+    if (!(form instanceof HTMLFormElement)) {
+      this.errorMessage = i18n("crimson_server_list.reporting.generic_error");
+      return;
+    }
+
+    const formData = new FormData(form);
     this.isSubmitting = true;
     this.errorMessage = "";
 
@@ -74,6 +79,7 @@ export default class CrimsonServerReportModal extends Component {
       class="csl-server-report-modal"
       @title={{i18n "crimson_server_list.reporting.title"}}
       @closeModal={{@closeModal}}
+      @tagName="form"
     >
       <:body>
         <p class="csl-server-report-modal__intro">
@@ -84,7 +90,7 @@ export default class CrimsonServerReportModal extends Component {
           <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
         {{/if}}
 
-        <form id="csl-server-report-form" class="csl-modal-form" {{on "submit" this.submit}}>
+        <div class="csl-modal-form">
           <label>
             <span>{{i18n "crimson_server_list.reporting.reason"}}</span>
             <select name="reason" required value={{this.reason}} {{on "change" this.updateReason}}>
@@ -106,23 +112,23 @@ export default class CrimsonServerReportModal extends Component {
             ></textarea>
             <small>{{i18n "crimson_server_list.reporting.privacy_note"}}</small>
           </label>
-        </form>
+        </div>
       </:body>
 
       <:footer>
-        <button class="btn" type="button" disabled={{this.isSubmitting}} {{on "click" @closeModal}}>
-          {{i18n "crimson_server_list.reporting.cancel"}}
-        </button>
-        <button
-          class="btn btn-danger"
-          type="submit"
-          form="csl-server-report-form"
-          disabled={{this.isSubmitting}}
-        >
-          {{if this.isSubmitting
-            (i18n "crimson_server_list.reporting.submitting")
-            (i18n "crimson_server_list.reporting.submit")}}
-        </button>
+        <DButton
+          @action={{@closeModal}}
+          @label="crimson_server_list.reporting.cancel"
+          @disabled={{this.isSubmitting}}
+        />
+        <DButton
+          @action={{this.submit}}
+          @forwardEvent={{true}}
+          @translatedLabel={{if this.isSubmitting (i18n "crimson_server_list.reporting.submitting") (i18n "crimson_server_list.reporting.submit")}}
+          @type="submit"
+          @isLoading={{this.isSubmitting}}
+          class="btn-danger"
+        />
       </:footer>
     </DModal>
   </template>
