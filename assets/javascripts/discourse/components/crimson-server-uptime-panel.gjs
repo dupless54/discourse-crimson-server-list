@@ -1,6 +1,7 @@
 import Component from "@glimmer/component";
 import { fn } from "@ember/helper";
 import { action } from "@ember/object";
+import { scheduleOnce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
@@ -13,14 +14,16 @@ export default class CrimsonServerUptimePanel extends Component {
 
   @tracked selectedRange = "24h";
   @tracked history = null;
-  @tracked isLoading = false;
+  @tracked isLoading = true;
   @tracked errorMessage = "";
 
   constructor() {
     super(...arguments);
 
     if (this.isAvailable && this.server.id) {
-      void this.loadHistory();
+      scheduleOnce("afterRender", this, this.loadHistory);
+    } else {
+      this.isLoading = false;
     }
   }
 
@@ -105,10 +108,6 @@ export default class CrimsonServerUptimePanel extends Component {
   }
 
   async loadHistory() {
-    if (this.isLoading) {
-      return;
-    }
-
     this.isLoading = true;
     this.errorMessage = "";
 
