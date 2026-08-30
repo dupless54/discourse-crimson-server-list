@@ -1,15 +1,16 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
-import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 
 export default class CrimsonServerVerificationPanel extends Component {
   @tracked verification = null;
   @tracked challenge = null;
   @tracked isLoading = true;
+  @tracked loadFailed = false;
   @tracked busyAction = "";
   @tracked message = "";
   @tracked errorMessage = "";
@@ -36,8 +37,18 @@ export default class CrimsonServerVerificationPanel extends Component {
     return Boolean(this.verification?.pending && !this.busyAction);
   }
 
+  get mutationBusy() {
+    return Boolean(this.busyAction);
+  }
+
+  @action
   async loadVerification() {
+    if (this.isLoading && this.verification) {
+      return;
+    }
+
     this.isLoading = true;
+    this.loadFailed = false;
     this.clearMessages();
 
     try {
@@ -45,8 +56,10 @@ export default class CrimsonServerVerificationPanel extends Component {
         `/crimson-server-list/servers/${this.args.server.id}/verification.json`,
       );
       this.verification = response.verification;
+      this.loadFailed = false;
       this.syncPublicState(response.verification);
     } catch (error) {
+      this.loadFailed = true;
       this.errorMessage = this.errorText(error);
     } finally {
       this.isLoading = false;
@@ -55,7 +68,7 @@ export default class CrimsonServerVerificationPanel extends Component {
 
   @action
   async startVerification() {
-    if (this.busyAction || !this.verificationEnabled) {
+    if (this.mutationBusy || !this.verificationEnabled) {
       return;
     }
 
@@ -105,16 +118,20 @@ export default class CrimsonServerVerificationPanel extends Component {
 
   @action
   async copyChallengeValue() {
-    if (!this.challenge?.record_value) {
+    if (!this.challenge?.record_value || this.mutationBusy) {
       return;
     }
 
+    this.busyAction = "copy";
+    this.clearMessages();
+
     try {
       await navigator.clipboard.writeText(this.challenge.record_value);
-      this.clearMessages();
       this.message = i18n("crimson_server_list.verification.copied");
     } catch {
-      this.errorMessage = this.challenge.record_value;
+      this.errorMessage = i18n("crimson_server_list.server_form.generic_error");
+    } finally {
+      this.busyAction = "";
     }
   }
 
@@ -131,7 +148,7 @@ export default class CrimsonServerVerificationPanel extends Component {
     return (
       error?.jqXHR?.responseJSON?.errors?.join(" ") ||
       error?.responseJSON?.errors?.join(" ") ||
-      "İşlem tamamlanamadı. Lütfen yeniden dene."
+      i18n("crimson_server_list.server_form.generic_error")
     );
   }
 
@@ -156,8 +173,17 @@ export default class CrimsonServerVerificationPanel extends Component {
           <p>{{i18n "crimson_server_list.verification.unavailable"}}</p>
         </div>
       {{else if this.isLoading}}
-        <div class="csl-verification-panel__status">
-          <p>{{i18n "crimson_server_list.verification.loading"}}</p>
+        <div class="csl-v3-tab-loading" role="status">
+          <span class="csl-v3-loading-dot" aria-hidden="true"></span>
+          {{i18n "crimson_server_list.verification.loading"}}
+        </div>
+      {{else if this.loadFailed}}
+        <div class="csl-verification-panel__status csl-v3-panel-error">
+          <DButton
+            @action={{this.loadVerification}}
+            @label="crimson_server_list.owner_panel.retry"
+            class="csl-button"
+          />
         </div>
       {{else if this.isVerified}}
         <div class="csl-verification-panel__status">
@@ -200,39 +226,38 @@ export default class CrimsonServerVerificationPanel extends Component {
 
           <div class="csl-verification-panel__actions">
             {{#if this.challenge.record_value}}
-              <button class="csl-button" type="button" {{on "click" this.copyChallengeValue}}>
-                {{i18n "crimson_server_list.verification.copy"}}
-              </button>
+              <DButton
+                @action={{this.copyChallengeValue}}
+                @label="crimson_server_list.verification.copy"
+                @disabled={{this.mutationBusy}}
+                @isLoading={{eq this.busyAction "copy"}}
+                class="csl-button"
+              />
             {{/if}}
-            <button
+            <DButton
+              @action={{this.checkVerification}}
+              @translatedLabel={{if (eq this.busyAction "check") (i18n "crimson_server_list.verification.checking") (i18n "crimson_server_list.verification.check")}}
+              @disabled={{this.mutationBusy}}
+              @isLoading={{eq this.busyAction "check"}}
               class="csl-button csl-button--primary"
-              type="button"
-              disabled={{this.busyAction}}
-              {{on "click" this.checkVerification}}
-            >
-              {{if (eq this.busyAction "check")
-                (i18n "crimson_server_list.verification.checking")
-                (i18n "crimson_server_list.verification.check")}}
-            </button>
-            <button
+            />
+            <DButton
+              @action={{this.startVerification}}
+              @label="crimson_server_list.verification.restart"
+              @disabled={{this.mutationBusy}}
+              @isLoading={{eq this.busyAction "start"}}
               class="csl-button"
-              type="button"
-              disabled={{this.busyAction}}
-              {{on "click" this.startVerification}}
-            >
-              {{i18n "crimson_server_list.verification.restart"}}
-            </button>
+            />
           </div>
         {{else}}
           <div class="csl-verification-panel__actions">
-            <button
+            <DButton
+              @action={{this.startVerification}}
+              @label="crimson_server_list.verification.start"
+              @disabled={{this.mutationBusy}}
+              @isLoading={{eq this.busyAction "start"}}
               class="csl-button csl-button--primary"
-              type="button"
-              disabled={{this.busyAction}}
-              {{on "click" this.startVerification}}
-            >
-              {{i18n "crimson_server_list.verification.start"}}
-            </button>
+            />
           </div>
         {{/if}}
       {{else}}
