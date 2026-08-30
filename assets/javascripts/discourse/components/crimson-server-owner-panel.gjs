@@ -2,8 +2,8 @@ import Component from "@glimmer/component";
 import { action } from "@ember/object";
 import { scheduleOnce } from "@ember/runloop";
 import { tracked } from "@glimmer/tracking";
-import { on } from "@ember/modifier";
 import { ajax } from "discourse/lib/ajax";
+import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
@@ -138,9 +138,12 @@ export default class CrimsonServerOwnerPanel extends Component {
         {{#if this.errorMessage}}
           <div class="csl-owner-panel__error csl-v3-panel-error">
             <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
-            <button class="csl-button" type="button" {{on "click" this.retryLoad}}>
-              {{i18n "crimson_server_list.owner_panel.retry"}}
-            </button>
+            <DButton
+              @action={{this.retryLoad}}
+              @label="crimson_server_list.owner_panel.retry"
+              @isLoading={{this.isLoading}}
+              class="csl-button"
+            />
           </div>
         {{else if this.isLoading}}
           <div class="csl-v3-tab-loading" role="status">
@@ -201,9 +204,12 @@ export default class CrimsonServerOwnerPanel extends Component {
 
             {{#if this.pagination.has_more}}
               <div class="csl-owner-panel__more">
-                <button class="csl-button" type="button" disabled={{this.isLoadingMore}} {{on "click" this.loadMore}}>
-                  {{if this.isLoadingMore (i18n "crimson_server_list.owner_panel.loading_more") (i18n "crimson_server_list.owner_panel.load_more")}}
-                </button>
+                <DButton
+                  @action={{this.loadMore}}
+                  @label="crimson_server_list.owner_panel.load_more"
+                  @isLoading={{this.isLoadingMore}}
+                  class="csl-button"
+                />
               </div>
             {{/if}}
           {{else}}

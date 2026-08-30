@@ -2,9 +2,10 @@ import Component from "@glimmer/component";
 import { concat, fn } from "@ember/helper";
 import { action } from "@ember/object";
 import { scheduleOnce } from "@ember/runloop";
-import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
+import { eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 
 export default class CrimsonReportModeration extends Component {
@@ -25,6 +26,10 @@ export default class CrimsonReportModeration extends Component {
 
   get isAdmin() {
     return Boolean(this.args.viewer?.is_admin);
+  }
+
+  get moderationBusy() {
+    return Boolean(this.busyReportId);
   }
 
   @action
@@ -64,7 +69,7 @@ export default class CrimsonReportModeration extends Component {
   }
 
   async moderate(report, status) {
-    if (this.busyReportId) {
+    if (this.moderationBusy) {
       return;
     }
 
@@ -107,9 +112,12 @@ export default class CrimsonReportModeration extends Component {
             {{#if this.hasLoaded}}
               <span class="csl-v3-panel-count">{{i18n "crimson_server_list.reporting.pending_count" count=this.reports.length}}</span>
             {{/if}}
-            <button class="csl-button" type="button" disabled={{this.isLoading}} {{on "click" this.reload}}>
-              {{i18n "crimson_server_list.reporting.reload"}}
-            </button>
+            <DButton
+              @action={{this.reload}}
+              @label="crimson_server_list.reporting.reload"
+              @isLoading={{this.isLoading}}
+              class="csl-button csl-v3-admin-refresh"
+            />
           </div>
         </header>
 
@@ -117,7 +125,16 @@ export default class CrimsonReportModeration extends Component {
           <p class="csl-notice csl-notice--success" role="status">{{this.message}}</p>
         {{/if}}
         {{#if this.errorMessage}}
-          <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
+          <div class="csl-v3-panel-error">
+            <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
+            {{#unless this.hasLoaded}}
+              <DButton
+                @action={{this.reload}}
+                @label="crimson_server_list.owner_panel.retry"
+                class="csl-button"
+              />
+            {{/unless}}
+          </div>
         {{/if}}
 
         {{#if this.isLoading}}
@@ -125,7 +142,7 @@ export default class CrimsonReportModeration extends Component {
             <span class="csl-v3-loading-dot" aria-hidden="true"></span>
             {{i18n "crimson_server_list.reporting.loading"}}
           </div>
-        {{else}}
+        {{else if this.hasLoaded}}
           <div class="csl-v3-report-list">
             {{#each this.reports as |report|}}
               <article class="csl-pending-row csl-report-row">
@@ -139,18 +156,20 @@ export default class CrimsonReportModeration extends Component {
                   <small>{{report.created_at}}</small>
                 </div>
                 <div class="csl-pending-row__actions">
-                  <button
+                  <DButton
+                    @action={{fn this.dismiss report}}
+                    @label="crimson_server_list.reporting.dismiss"
+                    @disabled={{this.moderationBusy}}
+                    @isLoading={{eq this.busyReportId report.id}}
                     class="csl-button"
-                    type="button"
-                    disabled={{this.busyReportId}}
-                    {{on "click" (fn this.dismiss report)}}
-                  >{{i18n "crimson_server_list.reporting.dismiss"}}</button>
-                  <button
+                  />
+                  <DButton
+                    @action={{fn this.resolve report}}
+                    @label="crimson_server_list.reporting.resolve"
+                    @disabled={{this.moderationBusy}}
+                    @isLoading={{eq this.busyReportId report.id}}
                     class="csl-button csl-button--primary"
-                    type="button"
-                    disabled={{this.busyReportId}}
-                    {{on "click" (fn this.resolve report)}}
-                  >{{i18n "crimson_server_list.reporting.resolve"}}</button>
+                  />
                 </div>
               </article>
             {{else}}
