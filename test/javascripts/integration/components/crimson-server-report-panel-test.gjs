@@ -1,6 +1,6 @@
 import { click, render } from "@ember/test-helpers";
-import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
+import { setupRenderingTest } from "discourse/tests/helpers/component-test";
 import CrimsonServerReportPanel from "discourse/plugins/discourse-crimson-server-list/discourse/components/crimson-server-report-panel";
 
 module("Integration | Component | crimson-server-report-panel", function (hooks) {
@@ -18,7 +18,7 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
       this.previousReportsEnabled;
   });
 
-  test("lets a signed-in non-owner open the report form", async function (assert) {
+  test("opens the report flow in DModal instead of page flow", async function (assert) {
     this.set("model", {
       server: { id: 42, name: "CrimsonCraft" },
       viewer: { logged_in: true, can_edit: false },
@@ -27,20 +27,22 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
     await render(
       <template>
         <CrimsonServerReportPanel @model={{this.model}} />
-      </template>
+      </template>,
     );
 
     assert.dom(".csl-report-panel").exists();
     assert.dom(".csl-report-form").doesNotExist();
+    assert.dom(".csl-server-report-modal").doesNotExist();
 
     await click(".csl-report-panel > button");
 
-    assert.dom(".csl-report-form").exists();
-    assert.dom(".csl-report-form select[name='reason']").exists();
-    assert.dom(".csl-report-form textarea[name='details']").exists();
+    assert.dom(".csl-report-form").doesNotExist("no inline form is inserted into the page");
+    assert.dom(".csl-server-report-modal").exists();
+    assert.dom("#csl-server-report-form select[name='reason']").exists();
+    assert.dom("#csl-server-report-form textarea[name='details']").exists();
   });
 
-  test("does not expose the member report form to the listing owner", async function (assert) {
+  test("does not expose the member report action to the listing owner", async function (assert) {
     this.set("model", {
       server: { id: 42, name: "CrimsonCraft" },
       viewer: { logged_in: true, can_edit: true },
@@ -49,7 +51,7 @@ module("Integration | Component | crimson-server-report-panel", function (hooks)
     await render(
       <template>
         <CrimsonServerReportPanel @model={{this.model}} />
-      </template>
+      </template>,
     );
 
     assert.dom(".csl-report-panel").doesNotExist();
