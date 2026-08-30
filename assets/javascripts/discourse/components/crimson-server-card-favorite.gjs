@@ -53,7 +53,7 @@ export default class CrimsonServerCardFavorite extends Component {
   }
 
   get retryLabel() {
-    return i18n("crimson_server_list.favorites.retry_loading");
+    return i18n("crimson_server_list.owner_panel.retry");
   }
 
   async loadState() {
