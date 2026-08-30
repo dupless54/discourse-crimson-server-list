@@ -1,11 +1,12 @@
 import Component from "@glimmer/component";
 import { fn } from "@ember/helper";
 import { action } from "@ember/object";
-import { on } from "@ember/modifier";
+import { scheduleOnce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
-import { eq } from "discourse/truth-helpers";
+import { and, eq } from "discourse/truth-helpers";
+import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 
 export default class CrimsonServerUptimePanel extends Component {
@@ -13,14 +14,16 @@ export default class CrimsonServerUptimePanel extends Component {
 
   @tracked selectedRange = "24h";
   @tracked history = null;
-  @tracked isLoading = false;
+  @tracked isLoading = true;
   @tracked errorMessage = "";
 
   constructor() {
     super(...arguments);
 
     if (this.isAvailable && this.server.id) {
-      void this.loadHistory();
+      scheduleOnce("afterRender", this, this.loadHistory);
+    } else {
+      this.isLoading = false;
     }
   }
 
@@ -99,6 +102,11 @@ export default class CrimsonServerUptimePanel extends Component {
     await this.loadHistory();
   }
 
+  @action
+  async retry() {
+    await this.loadHistory();
+  }
+
   async loadHistory() {
     this.isLoading = true;
     this.errorMessage = "";
@@ -131,23 +139,32 @@ export default class CrimsonServerUptimePanel extends Component {
 
           <div class="csl-uptime-ranges" aria-label={{i18n "crimson_server_list.uptime.range_label"}}>
             {{#each this.ranges as |range|}}
-              <button
-                type="button"
+              <DButton
+                @action={{fn this.selectRange range.value}}
+                @translatedLabel={{range.label}}
+                @disabled={{this.isLoading}}
+                @isLoading={{and this.isLoading (eq range.value this.selectedRange)}}
+                @ariaPressed={{eq range.value this.selectedRange}}
                 class="csl-button {{if (eq range.value this.selectedRange) "is-active" ""}}"
-                aria-pressed={{eq range.value this.selectedRange}}
-                disabled={{this.isLoading}}
-                {{on "click" (fn this.selectRange range.value)}}
-              >
-                {{range.label}}
-              </button>
+              />
             {{/each}}
           </div>
         </header>
 
         {{#if this.errorMessage}}
-          <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
+          <div class="csl-v3-panel-error">
+            <p class="csl-notice csl-notice--error" role="alert">{{this.errorMessage}}</p>
+            <DButton
+              @action={{this.retry}}
+              @label="crimson_server_list.owner_panel.retry"
+              class="csl-button"
+            />
+          </div>
         {{else if this.isLoading}}
-          <p class="csl-empty csl-empty--compact" role="status">{{i18n "crimson_server_list.uptime.loading"}}</p>
+          <div class="csl-v3-tab-loading" role="status">
+            <span class="csl-v3-loading-dot" aria-hidden="true"></span>
+            {{i18n "crimson_server_list.uptime.loading"}}
+          </div>
         {{else if this.hasSamples}}
           <div class="csl-uptime-summary">
             <div>
