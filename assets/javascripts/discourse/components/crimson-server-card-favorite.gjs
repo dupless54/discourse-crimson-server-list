@@ -44,6 +44,18 @@ export default class CrimsonServerCardFavorite extends Component {
     );
   }
 
+  get showLoadFailure() {
+    return this.loadFailed && !this.favoritesState.isLoaded;
+  }
+
+  get displayedErrorMessage() {
+    if (this.loadFailed && this.favoritesState.isLoaded) {
+      return "";
+    }
+
+    return this.errorMessage;
+  }
+
   get label() {
     return i18n(
       this.isFavorited
@@ -98,7 +110,7 @@ export default class CrimsonServerCardFavorite extends Component {
 
   <template>
     {{#if this.canRender}}
-      {{#if this.loadFailed}}
+      {{#if this.showLoadFailure}}
         <button
           class="csl-card-favorite csl-card-favorite--retry"
           type="button"
@@ -124,8 +136,8 @@ export default class CrimsonServerCardFavorite extends Component {
         </button>
       {{/if}}
 
-      {{#if this.errorMessage}}
-        <span class="sr-only" role="alert">{{this.errorMessage}}</span>
+      {{#if this.displayedErrorMessage}}
+        <span class="sr-only" role="alert">{{this.displayedErrorMessage}}</span>
       {{/if}}
     {{/if}}
   </template>
