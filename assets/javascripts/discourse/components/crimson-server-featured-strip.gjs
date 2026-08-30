@@ -1,7 +1,13 @@
 import Component from "@glimmer/component";
-import { eq } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
+
+const FEATURED_STATUSES = new Set([
+  "online",
+  "offline",
+  "maintenance",
+  "unknown",
+]);
 
 export default class CrimsonServerFeaturedStrip extends Component {
   get featuredServers() {
@@ -22,20 +28,17 @@ export default class CrimsonServerFeaturedStrip extends Component {
     return i18n("crimson_server_list.v3.featured_open");
   }
 
-  get onlineLabel() {
-    return i18n("crimson_server_list.v3.featured_online");
-  }
-
-  get offlineLabel() {
-    return i18n("crimson_server_list.v3.featured_offline");
-  }
-
   get playersLabel() {
     return i18n("crimson_server_list.v3.featured_players");
   }
 
   get reviewsLabel() {
     return i18n("crimson_server_list.v3.featured_reviews");
+  }
+
+  statusLabel(status) {
+    const normalizedStatus = FEATURED_STATUSES.has(status) ? status : "unknown";
+    return i18n(`crimson_server_list.v3.featured_${normalizedStatus}`);
   }
 
   <template>
@@ -73,7 +76,7 @@ export default class CrimsonServerFeaturedStrip extends Component {
                 <div class="csl-v3-featured-card__meta">
                   <span class="csl-status csl-status--{{server.status}}">
                     <i></i>
-                    {{if (eq server.status "online") this.onlineLabel this.offlineLabel}}
+                    {{this.statusLabel server.status}}
                   </span>
                   <span class="csl-v3-featured-card__game">{{server.game.icon}} {{server.game.name}}</span>
                   {{#if server.supports_player_count}}
