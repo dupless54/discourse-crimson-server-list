@@ -2,7 +2,7 @@
 
 # name: discourse-crimson-server-list
 # about: Discourse'a bağımsız ve moderasyonlu bir özel oyun sunucusu sıralaması ekler.
-# version: 2.9.0
+# version: 3.0.1
 # authors: dupless54
 # url: https://senin.me/servers
 # required_version: 3.3.0
@@ -18,6 +18,7 @@ register_asset "stylesheets/crimson-server-v3-featured.scss"
 register_asset "stylesheets/crimson-server-v3-detail.scss"
 register_asset "stylesheets/crimson-server-v3-card-actions.scss"
 register_asset "stylesheets/crimson-server-v3-shell.scss"
+register_asset "stylesheets/crimson-server-v3-compact-list.scss"
 
 module ::CrimsonServerList
   PLUGIN_NAME = "discourse-crimson-server-list"
