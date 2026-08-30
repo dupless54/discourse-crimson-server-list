@@ -6,6 +6,8 @@ import { on } from "@ember/modifier";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
 import { eq } from "discourse/truth-helpers";
+import dIcon from "discourse/ui-kit/helpers/d-icon";
+import CrimsonServerCardFavorite from "./crimson-server-card-favorite";
 import CrimsonVerifiedBadge from "./crimson-verified-badge";
 
 const DEFAULT_PER_PAGE = 24;
@@ -424,6 +426,7 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                   <div class="csl-server-card__title-row">
                     <h2><a href={{server.detail_url}}>{{server.name}}</a></h2>
                     <CrimsonVerifiedBadge @server={{server}} />
+                    <CrimsonServerCardFavorite @server={{server}} @viewer={{this.viewer}} />
                   </div>
                   <p>{{server.short_description}}</p>
                 </div>
@@ -468,9 +471,23 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                     >@{{server.owner.username}} tarafından eklendi</a>
                   </div>
                 {{/if}}
-                <nav aria-label="Sunucu bağlantıları">
-                  {{#if server.website_url}}<a href={{server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Web</a>{{/if}}
-                  {{#if server.discord_url}}<a href={{server.discord_url}} target="_blank" rel="noopener noreferrer nofollow ugc">Discord</a>{{/if}}
+                <nav class="csl-server-card__actions" aria-label="Sunucu bağlantıları">
+                  <a class="csl-card-action--detail" href={{server.detail_url}}>
+                    {{dIcon "circle-info"}}
+                    <span>Detayı Aç</span>
+                  </a>
+                  {{#if server.website_url}}
+                    <a href={{server.website_url}} target="_blank" rel="noopener noreferrer nofollow ugc">
+                      {{dIcon "globe"}}
+                      <span>Web</span>
+                    </a>
+                  {{/if}}
+                  {{#if server.discord_url}}
+                    <a href={{server.discord_url}} target="_blank" rel="noopener noreferrer nofollow ugc">
+                      {{dIcon "fab-discord"}}
+                      <span>Discord</span>
+                    </a>
+                  {{/if}}
                 </nav>
               </footer>
             </div>
@@ -501,12 +518,16 @@ export default class CrimsonServerDiscoveryPanel extends Component {
                   aria-pressed={{if server.voted_today "true" "false"}}
                   {{on "click" (fn this.vote server)}}
                 >
-                  {{if server.voted_today "Bugün oylandı" "Oy ver"}}
+                  {{dIcon "thumbs-up"}}
+                  <span>{{if server.voted_today "Bugün oylandı" "Oy ver"}}</span>
                 </button>
               {{else if this.viewer.logged_in}}
                 <span class="csl-vote-button is-disabled">Oylama kapalı</span>
               {{else}}
-                <a class="csl-vote-button" href="/login?return_path=%2Fservers">Oy vermek için giriş yap</a>
+                <a class="csl-vote-button" href="/login?return_path=%2Fservers">
+                  {{dIcon "thumbs-up"}}
+                  <span>Oy vermek için giriş yap</span>
+                </a>
               {{/if}}
             </aside>
           </article>
