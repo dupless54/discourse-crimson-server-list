@@ -4,7 +4,7 @@ import { action } from "@ember/object";
 import { scheduleOnce } from "@ember/runloop";
 import { tracked } from "@glimmer/tracking";
 import { ajax } from "discourse/lib/ajax";
-import { eq } from "discourse/truth-helpers";
+import { and, eq, not } from "discourse/truth-helpers";
 import DButton from "discourse/ui-kit/d-button";
 import { i18n } from "discourse-i18n";
 
