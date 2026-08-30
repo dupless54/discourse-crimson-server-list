@@ -43,7 +43,7 @@ export default class CrimsonServerFavoriteAction extends Component {
   }
 
   get isDisabled() {
-    return this.isLoading || Boolean(this.busyAction);
+    return this.isLoading || this.loadFailed || Boolean(this.busyAction);
   }
 
   get buttonLabel() {
