@@ -1,0 +1,806 @@
+/*
+ * Crimson Server List — modern discovery presentation.
+ *
+ * Loaded after the shared V3 and mobile layers. This file intentionally scopes
+ * itself to the public discovery shell and only changes presentation.
+ */
+
+.csl-route-wrap--paginated-discovery {
+  --csl-modern-border: color-mix(in srgb, var(--primary) 12%, transparent);
+  --csl-modern-border-strong: color-mix(in srgb, var(--primary) 20%, transparent);
+  --csl-modern-surface: color-mix(in srgb, var(--secondary) 96%, var(--primary) 4%);
+  --csl-modern-surface-raised: color-mix(in srgb, var(--secondary) 91%, var(--primary) 9%);
+  --csl-modern-glow: color-mix(in srgb, var(--tertiary) 16%, transparent);
+}
+
+/* Navigation ----------------------------------------------------------- */
+.csl-route-wrap--paginated-discovery .csl-v3-nav {
+  min-height: 3.6rem;
+  padding: 0.4rem;
+  align-items: center;
+  gap: 0.25rem;
+  background: color-mix(in srgb, var(--secondary) 93%, transparent);
+  border-color: var(--csl-modern-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgb(var(--primary-rgb), 0.055);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-nav button {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  color: var(--primary-medium);
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-nav button:hover,
+.csl-route-wrap--paginated-discovery .csl-v3-nav button:focus-visible {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-nav button.is-active {
+  color: var(--tertiary);
+  background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-nav button.is-active::after {
+  right: 0.8rem;
+  bottom: -0.4rem;
+  left: 0.8rem;
+  height: 2px;
+  box-shadow: 0 0 12px var(--csl-modern-glow);
+}
+
+/* Stats ---------------------------------------------------------------- */
+.csl-route-wrap--paginated-discovery .csl-v3-stats {
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article {
+  position: relative;
+  min-height: 5.5rem;
+  padding: 0.95rem 1rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 8% 15%, color-mix(in srgb, var(--csl-stat-accent, var(--tertiary)) 11%, transparent), transparent 38%),
+    var(--csl-modern-surface);
+  border-color: var(--csl-modern-border);
+  border-radius: 13px;
+  box-shadow: 0 8px 24px rgb(var(--primary-rgb), 0.045);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article:nth-child(1) {
+  --csl-stat-accent: var(--tertiary);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article:nth-child(2) {
+  --csl-stat-accent: var(--highlight);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article:nth-child(3) {
+  --csl-stat-accent: var(--tertiary);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article:nth-child(4) {
+  --csl-stat-accent: var(--success);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article:hover {
+  border-color: color-mix(in srgb, var(--csl-stat-accent) 32%, var(--primary-low));
+  box-shadow: 0 12px 30px rgb(var(--primary-rgb), 0.075);
+  transform: translateY(-1px);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stat-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--csl-stat-accent, var(--tertiary));
+  background: color-mix(in srgb, var(--csl-stat-accent, var(--tertiary)) 10%, var(--secondary));
+  border-color: color-mix(in srgb, var(--csl-stat-accent, var(--tertiary)) 24%, var(--primary-low));
+  border-radius: 11px;
+  box-shadow: inset 0 1px 0 rgb(var(--secondary-rgb), 0.08);
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats strong {
+  color: var(--primary);
+  font-size: var(--font-up-2);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.csl-route-wrap--paginated-discovery .csl-v3-stats article > div > span {
+  color: var(--primary-medium);
+  font-size: var(--font-down-1);
+}
+
+/* Filter console ------------------------------------------------------- */
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-discovery {
+  position: relative;
+  top: auto;
+  margin-bottom: 0.9rem;
+  padding: 1rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--secondary) 97%, var(--primary) 3%), color-mix(in srgb, var(--secondary) 91%, var(--primary) 9%));
+  border: 1px solid var(--csl-modern-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgb(var(--primary-rgb), 0.05);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter {
+  display: flex;
+  padding-bottom: 0.05rem;
+  gap: 0.45rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter::-webkit-scrollbar,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter > a {
+  display: inline-flex;
+  min-height: 2.65rem;
+  padding: 0.45rem 0.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--primary-medium);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--secondary) 86%, var(--primary) 14%);
+  border: 1px solid var(--csl-modern-border);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgb(var(--secondary-rgb), 0.06);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter > a:hover,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter > a:focus-visible {
+  color: var(--primary);
+  border-color: var(--csl-modern-border-strong);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter > a.is-active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--tertiary) 12%, var(--secondary));
+  border-color: color-mix(in srgb, var(--tertiary) 52%, var(--primary-low));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tertiary) 8%, transparent), 0 6px 18px var(--csl-modern-glow);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter strong {
+  font-size: var(--font-down-1);
+  font-weight: 700;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter small {
+  color: var(--primary-medium);
+  font-size: var(--font-down-2);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter {
+  display: flex;
+  margin-top: 0.7rem;
+  align-items: center;
+  gap: 0.3rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter > strong {
+  margin-inline-end: 0.15rem;
+  flex: 0 0 auto;
+  color: var(--primary-medium);
+  font-size: var(--font-down-2);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter > a {
+  min-height: 1.8rem;
+  padding: 0.28rem 0.5rem;
+  flex: 0 0 auto;
+  color: var(--primary-medium);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--secondary) 89%, var(--primary) 11%);
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter > a:hover,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter > a:focus-visible,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter > a.is-active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--tertiary) 10%, var(--secondary));
+  border-color: color-mix(in srgb, var(--tertiary) 26%, var(--primary-low));
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 0.8rem;
+  align-items: end;
+  gap: 0.65rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-search,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort {
+  min-width: 0;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-search input,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort select {
+  box-sizing: border-box;
+  min-height: 2.85rem;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--secondary) 90%, var(--primary) 10%);
+  border: 1px solid var(--csl-modern-border-strong);
+  border-radius: 9px;
+  outline: none;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-search input {
+  width: 100%;
+  padding-inline: 0.85rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-search input:focus,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort select:focus {
+  border-color: color-mix(in srgb, var(--tertiary) 55%, var(--primary-low));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tertiary) 12%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort > span {
+  color: var(--primary-medium);
+  font-size: var(--font-down-2);
+  font-weight: 650;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort select {
+  min-width: 10rem;
+  padding-inline: 0.75rem 2rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-discovery-status {
+  display: flex;
+  min-height: 1.8rem;
+  padding: 0 0.2rem;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--primary-medium);
+  font-size: var(--font-down-2);
+}
+
+/* Premium server directory -------------------------------------------- */
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-list {
+  gap: 0.8rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.7rem minmax(15rem, 0.95fr) minmax(22rem, 1.28fr) minmax(13.5rem, 0.8fr);
+  grid-template-areas: "rank body visual score";
+  min-width: 0;
+  min-height: 9.25rem;
+  overflow: hidden;
+  align-items: stretch;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--secondary) 97%, var(--primary) 3%), color-mix(in srgb, var(--secondary) 92%, var(--primary) 8%));
+  border: 1px solid var(--csl-modern-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgb(var(--primary-rgb), 0.055);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card:hover {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--secondary) 96%, var(--primary) 4%), color-mix(in srgb, var(--secondary) 90%, var(--primary) 10%));
+  border-color: color-mix(in srgb, var(--csl-game, var(--tertiary)) 34%, var(--primary-low));
+  box-shadow: 0 14px 34px rgb(var(--primary-rgb), 0.085);
+  transform: translateY(-1px);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card::after {
+  top: 0.65rem;
+  bottom: 0.65rem;
+  left: 0;
+  width: 3px;
+  height: auto;
+  opacity: 0.95;
+  border-radius: 0 999px 999px 0;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--csl-game, var(--tertiary)) 28%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-rank {
+  grid-area: rank;
+  padding: 0.85rem 0.1rem;
+  color: var(--primary-medium);
+  background: color-mix(in srgb, var(--primary) 2.5%, transparent);
+  border-inline-end: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-rank span {
+  color: var(--tertiary);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body {
+  grid-area: body;
+  display: flex;
+  min-width: 0;
+  padding: 1rem 0.9rem;
+  align-self: stretch;
+  flex-direction: column;
+  justify-content: center;
+  border-inline-end: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body > header {
+  align-items: flex-start;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body h2 {
+  font-size: var(--font-up-1);
+  letter-spacing: -0.015em;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body header p {
+  margin-top: 0.28rem;
+  -webkit-line-clamp: 2;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-meta {
+  margin-top: 0.55rem;
+  gap: 0.28rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-meta > span,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-category-chip,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-tags > a {
+  min-height: 1.65rem;
+  padding: 0.2rem 0.45rem;
+  font-size: var(--font-down-2);
+  background: color-mix(in srgb, var(--secondary) 82%, var(--primary) 18%);
+  border: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+  border-radius: 999px;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-status {
+  background: color-mix(in srgb, var(--success) 9%, var(--secondary));
+  border-color: color-mix(in srgb, var(--success) 26%, var(--primary-low));
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-tags {
+  margin-top: 0.38rem;
+  gap: 0.25rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body > footer {
+  margin-top: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-owner {
+  min-width: 0;
+  flex: 1 1 8rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-owner__identity {
+  max-width: 13rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions {
+  margin-inline-start: auto;
+  gap: 0.3rem;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions a {
+  min-height: 2rem;
+  padding: 0.3rem 0.55rem;
+  color: var(--primary-high);
+  background: color-mix(in srgb, var(--secondary) 83%, var(--primary) 17%);
+  border: 1px solid var(--csl-modern-border);
+  border-radius: 7px;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions a:hover,
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions a:focus-visible {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--tertiary) 9%, var(--secondary));
+  border-color: color-mix(in srgb, var(--tertiary) 28%, var(--primary-low));
+}
+
+/* The submitted 468x60 banner now owns the central visual column. */
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__visual {
+  grid-area: visual;
+  display: flex;
+  min-width: 0;
+  padding: 1rem 0.85rem;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--csl-game, var(--tertiary)) 8%, transparent), transparent 72%);
+  border-inline-end: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-ad-banner {
+  display: flex;
+  width: 100%;
+  max-width: 29.25rem;
+  height: auto;
+  min-height: 3.85rem;
+  aspect-ratio: 7.8 / 1;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--secondary) 88%, var(--primary) 12%);
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent);
+  border-radius: 9px;
+  box-shadow: 0 8px 24px rgb(var(--primary-rgb), 0.12);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-ad-banner img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: none !important;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__fallback {
+  width: min(8rem, 70%);
+  height: auto;
+  min-height: 5rem;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+}
+
+/* Right-side metrics --------------------------------------------------- */
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score {
+  grid-area: score;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: 1fr auto;
+  min-width: 0;
+  padding: 0.9rem 0.75rem;
+  align-items: center;
+  gap: 0.45rem;
+  background: color-mix(in srgb, var(--secondary) 94%, var(--primary) 6%);
+  border-inline-start: 0;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score > div {
+  min-width: 0;
+  padding: 0.2rem 0.15rem;
+  text-align: center;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score > div + div {
+  border-inline-start: 1px solid color-mix(in srgb, var(--primary) 9%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score strong {
+  color: var(--primary);
+  font-size: var(--font-up-1);
+  font-variant-numeric: tabular-nums;
+  font-weight: 760;
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score span {
+  color: var(--primary-medium);
+  font-size: var(--font-down-3);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-vote-button {
+  grid-column: 1 / -1;
+  min-height: 2.35rem;
+  margin: 0;
+  justify-content: center;
+  border-radius: 8px;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--tertiary) 13%, transparent);
+}
+
+.csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-footnote {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--primary-medium);
+  background: color-mix(in srgb, var(--secondary) 92%, var(--primary) 8%);
+  border: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+  border-radius: 999px;
+}
+
+/* Keep the premium row useful on narrower desktop content columns. */
+@media (max-width: 1180px) {
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card {
+    grid-template-columns: 2.55rem minmax(15rem, 0.95fr) minmax(20rem, 1.2fr);
+    grid-template-areas:
+      "rank body visual"
+      "rank score score";
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(9rem, 0.9fr);
+    grid-template-rows: auto;
+    padding: 0.55rem 0.75rem 0.7rem;
+    background: transparent;
+    border-block-start: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-vote-button {
+    grid-column: auto;
+  }
+}
+
+/* Mobile mockup: identity first, featured banner second, metrics/actions last. */
+@media (max-width: 760px) {
+  .csl-route-wrap--paginated-discovery .csl-v3-nav {
+    margin: 0 0 0.75rem;
+    padding: 0.3rem;
+    gap: 0.2rem;
+    border: 1px solid var(--csl-modern-border);
+    border-radius: 12px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-v3-nav button {
+    min-height: 2.65rem;
+    padding-inline: 0.8rem;
+    border-radius: 9px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-v3-nav button.is-active::after {
+    bottom: -0.3rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-v3-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-v3-stats article {
+    min-height: 5rem;
+    padding: 0.7rem;
+    grid-template-columns: 2.3rem minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-v3-stat-icon {
+    width: 2.3rem;
+    height: 2.3rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-discovery {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter,
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-tag-filter {
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    scroll-padding-inline: 0.75rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-game-filter > a {
+    min-height: 2.55rem;
+    padding-inline: 0.7rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(8.75rem, 0.4fr);
+    gap: 0.5rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-sort select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-list {
+    gap: 0.75rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    grid-template-areas:
+      "rank body"
+      "visual visual"
+      "score score";
+    min-height: 0;
+    padding-bottom: 3.65rem;
+    border-radius: 13px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-rank {
+    grid-row: 1;
+    padding: 0.8rem 0.05rem;
+    align-items: flex-start;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body {
+    padding: 0.8rem 0.75rem;
+    border-inline-end: 0;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body header p {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: var(--font-down-1);
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-meta {
+    margin-top: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-meta > span,
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-category-chip {
+    display: inline-flex;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-tags {
+    display: flex;
+    margin-top: 0.35rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-tags::-webkit-scrollbar {
+    display: none;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-owner {
+    display: flex;
+    margin-top: 0.15rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-owner__identity {
+    max-width: 100%;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__visual {
+    min-height: 0;
+    padding: 0.15rem 0.75rem 0.75rem;
+    border-block-start: 0;
+    border-inline-end: 0;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-ad-banner {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    aspect-ratio: 7.8 / 1;
+    border-radius: 9px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__fallback {
+    width: 5rem;
+    min-height: 5rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score {
+    position: static;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto;
+    padding: 0.75rem;
+    gap: 0.25rem;
+    background: color-mix(in srgb, var(--secondary) 93%, var(--primary) 7%);
+    border-block-start: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score > div {
+    padding: 0.35rem 0.15rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__score strong {
+    font-size: var(--font-0);
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__body > footer {
+    position: static;
+    margin-top: 0.45rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions {
+    position: absolute;
+    right: 43%;
+    bottom: 0.7rem;
+    left: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    gap: 0.35rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions a {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.35rem;
+    padding: 0.35rem 0.4rem;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions a span {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: nowrap;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-vote-button {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.7rem;
+    width: calc(43% - 1rem);
+    min-height: 2.35rem;
+    border-radius: 8px;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-footnote {
+    border-radius: 11px;
+  }
+}
+
+@media (max-width: 560px) {
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-toolbar {
+    grid-template-columns: minmax(0, 1fr) 8.75rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card {
+    padding-bottom: 6.7rem;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions {
+    right: 0.75rem;
+    bottom: 3.75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-vote-button {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.7rem;
+    width: auto;
+  }
+}
+
+@media (max-width: 390px) {
+  .csl-route-wrap--paginated-discovery .csl-v3-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .csl-route-wrap--paginated-discovery .csl-discovery-shell .csl-server-card__actions a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}

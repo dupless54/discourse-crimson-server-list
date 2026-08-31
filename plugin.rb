@@ -20,6 +20,7 @@ register_asset "stylesheets/crimson-server-v3-card-actions.scss"
 register_asset "stylesheets/crimson-server-v3-shell.scss"
 register_asset "stylesheets/crimson-server-v3-compact-list.scss"
 register_asset "stylesheets/crimson-server-mobile.scss"
+register_asset "stylesheets/crimson-server-modern-discovery.scss"
 
 module ::CrimsonServerList
   PLUGIN_NAME = "discourse-crimson-server-list"
